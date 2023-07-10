@@ -48,8 +48,8 @@ healthCheck:
   port: http
 
 container:
-  # Array containers
-  - name: nginx-container
+#  # Array containers
+#  - name: nginx-container
 #    env:
 #      # Set with simple value
 #      - name: DB_HOST

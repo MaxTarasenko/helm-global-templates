@@ -34,8 +34,12 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        {{- range .Values.container }}
+        {{- with .Values.container }}
+        {{- range . }}
         - name: {{ .name }}
+        {{- end }}
+        {{- else }}
+        - name: {{ include "global-one.fullname" . }}
         {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
