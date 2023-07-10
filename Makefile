@@ -6,6 +6,9 @@ ifndef HELM_CHART_VERSION
 HELM_CHART_VERSION = 0.1.0
 endif
 
+login:
+	helm registry login registry-1.docker.io
+
 diff:
 	helm diff test charts/global-one --allow-unreleased
 
