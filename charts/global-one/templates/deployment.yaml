@@ -24,30 +24,14 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "global-one.serviceAccountName" . }}
-      {{- end }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      containers:
-        - name: {{ include "global-one.fullname" . }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.image.env }}
-          image: "{{ .Values.image.repository }}/{{ .Values.image.env }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          {{- else if .Values.image.repository }}
-          image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          {{- else }}
-          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          {{- end }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.env }}
+      {{- if .Values.initContainers }}
+      initContainers:
+        {{- range .Values.initContainers }}
+        - name: {{ .name }}
+          image: "{{ .image.repository }}/{{ .image.name }}:{{ .image.tag }}"
+          {{- if .env }}
           env:
-            {{- range $name, $value := .Values.env }}
+            {{- range $name, $value := .env }}
             - name: {{ $name }}
                 {{- if $value.value }}
               value: {{ $value.value | quote }}
@@ -59,6 +43,82 @@ spec:
                 {{- end }}
               {{- end }}
           {{- end }}
+        {{- end }}
+        {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "global-one.serviceAccountName" . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      {{- if .Values.containers }}
+      {{- range .Values.containers }}
+        - name: {{ .name }}
+          image: "{{ .image.repository }}/{{ .image.name }}:{{ .image.tag }}"
+          imagePullPolicy: {{ .image.pullPolicy }}
+          {{- if .command }}
+          command:
+            {{- toYaml .command | nindent 12 }}
+          {{- end }}
+          {{- if .args }}
+          args:
+            {{- toYaml .args | nindent 12 }}
+          {{- end }}
+          {{- if .env }}
+          env:
+            {{- range $name, $value := .env }}
+            - name: {{ $name }}
+              {{- if $value.value }}
+              value: {{ $value.value | quote }}
+              {{- else if $value.secret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $value.secret.name | quote }}
+                  key: {{ $value.secret.key | quote }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
+      {{- else }}
+        - name: {{ include "global-one.fullname" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- if .Values.image.env }}
+          image: "{{ .Values.image.repository }}/{{ .Values.image.env }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          {{- else if .Values.image.repository }}
+          image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          {{- else }}
+          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.command }}
+          command:
+            {{- toYaml .Values.command | nindent 12 }}
+          {{- end }}
+          {{- if .Values.args }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+          {{- end }}
+          {{- if .Values.env }}
+          env:
+            {{- range $name, $value := .Values.env }}
+            - name: {{ $name }}
+              {{- if $value.value }}
+              value: {{ $value.value | quote }}
+              {{- else if $value.secret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $value.secret.name | quote }}
+                  key: {{ $value.secret.key | quote }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+      {{- end }}
           ports:
             {{- range .Values.service.ports }}
             - name: {{ .name }}

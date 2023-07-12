@@ -12,7 +12,11 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-#env: # Enable this section for env variables
+#command: ["python", "-m"]
+#args: ["my-app", "--arg1", "value1"]
+
+# If you need one container
+env: {}
 #  # Set with simple value
 #  DB_HOST: # Name
 #    value: host # Values
@@ -21,6 +25,58 @@ image:
 #    secret: # set secret
 #      name: db-secrets
 #      key: password
+
+# If you need multiple containers
+containers: []
+#  - name: container1
+#    image:
+#      repository: repo1
+#      name: name1
+#      tag: tag1
+#    command: ["python", "-m"]
+#    args: ["my-app", "--arg1", "value1"]
+#    env:
+#      DB_HOST:
+#        value: "default-host"
+#      DB_USER:
+#        value: "default-user"
+#      DB_PASS:
+#        secret:
+#          name: "default-secrets"
+#          key: "default-password"
+#  - name: container2
+#    image:
+#      repository: repo2
+#      name: name2
+#      tag: tag2
+#    command: ["python", "-m"]
+#    args: ["my-app", "--arg1", "value1"]
+#    env:
+#      DB_HOST:
+#        value: "default-host"
+#      DB_USER:
+#        value: "default-user"
+#      DB_PASS:
+#        secret:
+#          name: "default-secrets"
+#          key: "default-password"
+
+# For init container
+initContainers: []
+#  - name: my-init-container
+#    image:
+#      repository: my-repo
+#      name: my-init-app
+#      tag: latest
+#    env:
+#      INIT_DB_HOST:
+#        value: "init-default-host"
+#      INIT_DB_USER:
+#        value: "init-default-user"
+#      INIT_DB_PASS:
+#        secret:
+#          name: "init-default-secrets"
+#          key: "init-default-password"
 
 healthCheck:
   livenessProbe:
