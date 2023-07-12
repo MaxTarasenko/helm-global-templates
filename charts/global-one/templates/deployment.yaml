@@ -34,13 +34,7 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        {{- with .Values.container }}
-        {{- range . }}
-        - name: {{ .name }}
-        {{- end }}
-        {{- else }}
         - name: {{ include "global-one.fullname" . }}
-        {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           {{- if .Values.image.env }}
@@ -51,21 +45,19 @@ spec:
           image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
           {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- range .Values.container }}
-          {{- if .env }}
+          {{- if .Values.env }}
           env:
-            {{- range .env }}
-            - name: {{ .name }}
-              {{- if .value }}
-              value: {{ .value }}
-              {{- else }}
+            {{- range $name, $value := .Values.env }}
+            - name: {{ $name }}
+                {{- if $value.value }}
+              value: {{ $value.value | quote }}
+                {{- else if $value.secret }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ .secret.name }}
-                  key: {{ .secret.key }}
+                  name: {{ $value.secret.name | quote }}
+                  key: {{ $value.secret.key | quote }}
+                {{- end }}
               {{- end }}
-            {{- end }}
-          {{- end }}
           {{- end }}
           ports:
             {{- range .Values.service.ports }}
@@ -73,17 +65,27 @@ spec:
               containerPort: {{ .port }}
               protocol: TCP
             {{- end }}
-          {{- if .Values.healthCheck.livenessProbe }}
+          {{- with .Values.healthCheck }}
+          {{- if .livenessProbe.enable }}
           livenessProbe:
+            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .livenessProbe.failureThreshold }}
             httpGet:
-              path: {{ .Values.healthCheck.path }}
-              port: {{ .Values.healthCheck.port }}
+              path: {{ .path }}
+              port: {{ .port }}
           {{- end }}
-          {{- if .Values.healthCheck.readinessProbe }}
+          {{- if .readinessProbe.enable }}
           readinessProbe:
+            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .readinessProbe.failureThreshold }}
             httpGet:
-              path: {{ .Values.healthCheck.path }}
-              port: {{ .Values.healthCheck.port }}
+              path: {{ .path }}
+              port: {{ .port }}
+          {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

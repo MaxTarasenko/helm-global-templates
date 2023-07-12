@@ -1,0 +1,3 @@
+nodeSelector:
+  level_type: apps
+  node_type: demand

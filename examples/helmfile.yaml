@@ -1,3 +1,7 @@
+environments:
+  prod: {}
+  dev: {}
+
 repositories:
   - name: global-one
     url: registry-1.docker.io/mrmerseri
@@ -9,3 +13,4 @@ releases:
     version: 0.1.0
     values:
       - values/values.yaml
+      - values/{{ .Environment.Name }}.yaml

@@ -12,22 +12,29 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-container:
-#  # Array containers
-#  - name: nginx-container
-#    env:
-#      # Set with simple value
-#      - name: DB_HOST
-#        value: host
-#      # Set with secret
-#      - name: DB_PASS
-#        secret:
-#          name: db-secrets
-#          key: password
+#env: # Enable this section for env variables
+#  # Set with simple value
+#  DB_HOST: # Name
+#    value: host # Values
+#  # Set with secret
+#  DB_PASS: # Name
+#    secret: # set secret
+#      name: db-secrets
+#      key: password
 
 healthCheck:
-  livenessProbe: false
-  readinessProbe: false
+  livenessProbe:
+    enable: false
+    initialDelaySeconds: 300
+    periodSeconds: 20
+    timeoutSeconds: 10
+    failureThreshold: 5
+  readinessProbe:
+    enable: false
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 10
+    failureThreshold: 5
   path: /
   port: http
 
