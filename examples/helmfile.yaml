@@ -1,12 +1,12 @@
 environments:
   prod: {}
   dev: {}
-
+---
 repositories:
   - name: global-one
     url: registry-1.docker.io/mrmerseri
     oci: true
-
+---
 releases:
   - name: node-test
     chart: global-one/global-one
@@ -14,3 +14,4 @@ releases:
     values:
       - values/values.yaml
       - values/{{ .Environment.Name }}.yaml
+

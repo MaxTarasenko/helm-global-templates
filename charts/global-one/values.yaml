@@ -101,6 +101,7 @@ service:
 
 ingress:
   enabled: false
+#  portIndex: 0  # port index in the `service.ports` list, which will be used for ingress
   className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
