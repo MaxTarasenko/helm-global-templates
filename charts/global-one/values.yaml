@@ -18,13 +18,12 @@ image:
 # If you need one container
 env: {}
 #  # Set with simple value
-#  DB_HOST: # Name
-#    value: host # Values
+#  DB_HOST: "host"
 #  # Set with secret
-#  DB_PASS: # Name
-#    secret: # set secret
-#      name: db-secrets
-#      key: password
+#  DB_PASS:
+#   secret:
+#      name: "db-secrets"
+#      key: "password"
 
 # If you need multiple containers
 containers: []
@@ -36,10 +35,10 @@ containers: []
 #    command: ["python", "-m"]
 #    args: ["my-app", "--arg1", "value1"]
 #    env:
-#      DB_HOST:
-#        value: "default-host"
-#      DB_USER:
-#        value: "default-user"
+#      # Set with simple value
+#      DB_HOST: "default-host"
+#      DB_USER: "default-user"
+#      # Set with secret
 #      DB_PASS:
 #        secret:
 #          name: "default-secrets"
@@ -52,10 +51,10 @@ containers: []
 #    command: ["python", "-m"]
 #    args: ["my-app", "--arg1", "value1"]
 #    env:
-#      DB_HOST:
-#        value: "default-host"
-#      DB_USER:
-#        value: "default-user"
+#      # Set with simple value
+#      DB_HOST: "default-host"
+#      DB_USER: "default-user"
+#      # Set with secret
 #      DB_PASS:
 #        secret:
 #          name: "default-secrets"
@@ -69,10 +68,10 @@ initContainers: []
 #      name: my-init-app
 #      tag: latest
 #    env:
-#      INIT_DB_HOST:
-#        value: "init-default-host"
-#      INIT_DB_USER:
-#        value: "init-default-user"
+#      # Set with simple value
+#      INIT_DB_HOST: "init-default-host"
+#      INIT_DB_USER: "init-default-user"
+#      # Set with secret
 #      INIT_DB_PASS:
 #        secret:
 #          name: "init-default-secrets"

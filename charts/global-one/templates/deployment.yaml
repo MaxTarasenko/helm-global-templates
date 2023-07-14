@@ -33,9 +33,9 @@ spec:
           env:
             {{- range $name, $value := .env }}
             - name: {{ $name }}
-                {{- if $value.value }}
-              value: {{ $value.value | quote }}
-                {{- else if $value.secret }}
+              {{- if (typeOf $value) | eq "string" }}
+              value: {{ $value | quote }}
+              {{- else if $value.secret }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $value.secret.name | quote }}
@@ -73,8 +73,8 @@ spec:
           env:
             {{- range $name, $value := .env }}
             - name: {{ $name }}
-              {{- if $value.value }}
-              value: {{ $value.value | quote }}
+              {{- if (typeOf $value) | eq "string" }}
+              value: {{ $value | quote }}
               {{- else if $value.secret }}
               valueFrom:
                 secretKeyRef:
@@ -108,8 +108,8 @@ spec:
           env:
             {{- range $name, $value := .Values.env }}
             - name: {{ $name }}
-              {{- if $value.value }}
-              value: {{ $value.value | quote }}
+              {{- if (typeOf $value) | eq "string" }}
+              value: {{ $value | quote }}
               {{- else if $value.secret }}
               valueFrom:
                 secretKeyRef:
