@@ -77,6 +77,24 @@ initContainers: []
 #          name: "init-default-secrets"
 #          key: "init-default-password"
 
+# Connect volumes in the pod (example)
+connectVolume: []
+#  - name: gateway-private-key
+#    secret:
+#      secretName: gateway-private-key
+#  - name: gateway-public-key
+#    secret:
+#      secretName: gateway-public-key
+
+# Mounts volumes to container when one container
+volumeMounts: []
+#  - name: gateway-private-key
+#    mountPath: /keys/private.key
+#    subPath: gateway-private-key
+#  - name: gateway-public-key
+#    mountPath: /keys/public.key
+#    subPath: gateway-public-key
+
 healthCheck:
   livenessProbe:
     enable: false

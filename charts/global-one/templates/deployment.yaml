@@ -24,6 +24,11 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- if .Values.connectVolume }}
+      volumes:
+        {{ toYaml .Values.connectVolume | nindent 8 }}
+      {{- end }}
+
       {{- if .Values.initContainers }}
       initContainers:
         {{- range .Values.initContainers }}
@@ -118,6 +123,12 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+
+          {{- if .Values.volumeMounts }}
+          volumeMounts:
+            {{ toYaml .Values.volumeMounts | nindent 12 }}
+          {{- end }}
+
       {{- end }}
           ports:
             {{- range .Values.service.ports }}
