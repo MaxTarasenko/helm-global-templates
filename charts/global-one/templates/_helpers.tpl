@@ -26,18 +26,37 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
-Create url to service
+image block
 */}}
-{{- define "service.url" -}}
-{{- $namespace := "default" }}
-{{- if .Release }}
-  {{- if .Release.Namespace }}
-    {{- $namespace = .Release.Namespace }}
-  {{- end }}
+{{- define "global-one.image" -}}
+{{- if .Values.image.env }}
+{{- printf "%s/%s/%s:%s" .Values.image.repository .Values.image.env .Values.image.name .Values.image.tag | quote }}
+{{- else if .Values.image.repository }}
+{{- printf "%s/%s:%s" .Values.image.repository .Values.image.name .Values.image.tag | quote }}
+{{- else }}
+{{- printf "%s:%s" .Values.image.name .Values.image.tag | quote }}
 {{- end }}
-{{- printf "http://%s.%s.svc.cluster.local.:%s" .name $namespace .port  }}
 {{- end -}}
 
+{{/*
+ env block
+*/}}
+{{- define "global-one.env" -}}
+{{- $global := . -}}
+{{- range $name, $value := .Values.env }}
+- name: {{ $name }}
+  {{- if (typeOf $value) | eq "string" }}
+  value: {{ $value | quote }}
+  {{- else if $value.secret }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ $value.secret.name | quote }}
+      key: {{ $value.secret.key | quote }}
+  {{- else if $value.service_url }}
+  value: {{ printf "http://%s.%s.svc.cluster.local.:%s" $value.service_url.name (default "default" $global.Release.Namespace) (toString $value.service_url.port) | quote }}
+  {{- end }}
+{{- end }}
+{{- end -}}
 
 {{/*
 Common labels

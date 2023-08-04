@@ -89,19 +89,7 @@ spec:
           {{- end }}
           {{- if .env }}
           env:
-            {{- range $name, $value := .env }}
-            - name: {{ $name }}
-              {{- if (typeOf $value) | eq "string" }}
-              value: {{ $value | quote }}
-              {{- else if $value.secret }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $value.secret.name | quote }}
-                  key: {{ $value.secret.key | quote }}
-              {{- else if $value.service_url }}
-              value: {{- " " -}}{{- include "service.url" (dict "name" $value.service_url.name "port" $value.service_url.port) -}}
-              {{- end }}
-            {{- end }}
+            {{- include "global-one.env" . | nindent 12 }}
           {{- end }}
       {{- end }}
 
@@ -110,13 +98,7 @@ spec:
         - name: {{ include "global-one.fullname" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.image.env }}
-          image: "{{ .Values.image.repository }}/{{ .Values.image.env }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          {{- else if .Values.image.repository }}
-          image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          {{- else }}
-          image: "{{ .Values.image.name }}:{{ .Values.image.tag }}"
-          {{- end }}
+          image: {{ include "global-one.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.command }}
           command:
@@ -128,19 +110,7 @@ spec:
           {{- end }}
           {{- if .Values.env }}
           env:
-            {{- range $name, $value := .Values.env }}
-            - name: {{ $name }}
-              {{- if (typeOf $value) | eq "string" }}
-              value: {{ $value | quote }}
-              {{- else if $value.secret }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $value.secret.name | quote }}
-                  key: {{ $value.secret.key | quote }}
-              {{- else if $value.service_url }}
-              value: {{- " " -}}{{- include "service.url" (dict "name" $value.service_url.name "port" $value.service_url.port) -}}
-              {{- end }}
-            {{- end }}
+            {{- include "global-one.env" . | nindent 12 }}
           {{- end }}
 
           {{- if .Values.volumeMounts }}

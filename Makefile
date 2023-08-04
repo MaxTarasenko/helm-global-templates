@@ -3,14 +3,17 @@ HELM_CHART_PACKAGE = $(shell ls *.tgz | head -n 1)
 DCR = registry-1.docker.io
 
 ifndef HELM_CHART_VERSION
-HELM_CHART_VERSION = 0.1.0
+HELM_CHART_VERSION = 0.1.1
 endif
 
 login:
 	helm registry login registry-1.docker.io
 
+create-namespace:
+	kubectl create namespace test
+
 diff:
-	helm diff upgrade test charts/global-one --allow-unreleased --context 1 --debug
+	helm -n test diff upgrade test charts/global-one --allow-unreleased --context 1 --debug
 
 upgrade_or_install:
 	helm -n test upgrade --install test charts/global-one
