@@ -19,16 +19,21 @@ spec:
       {{- end }}
       labels:
         {{- include "global-one.selectorLabels" . | nindent 8 }}
-      # Include podLabels
+
+        # Include podLabels
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+
     spec:
+
+      # Connect volumes
       {{- if .Values.connectVolume }}
       volumes:
         {{ toYaml .Values.connectVolume | nindent 8 }}
       {{- end }}
 
+      # Init containers
       {{- if .Values.initContainers }}
       initContainers:
         {{- range .Values.initContainers }}
@@ -51,16 +56,24 @@ spec:
         {{- end }}
         {{- end }}
 
+      # Image pull secrets
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
+      # Service account
       {{- if .Values.serviceAccount.create }}
       serviceAccountName: {{ include "global-one.serviceAccountName" . }}
       {{- end }}
+
+      # Security context
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
       containers:
+
+      # Multiple containers or single container
       {{- if .Values.containers }}
       {{- range .Values.containers }}
         - name: {{ .name }}
@@ -85,10 +98,14 @@ spec:
                 secretKeyRef:
                   name: {{ $value.secret.name | quote }}
                   key: {{ $value.secret.key | quote }}
+              {{- else if $value.service_url }}
+              value: {{- " " -}}{{- include "service.url" (dict "name" $value.service_url.name "port" $value.service_url.port) -}}
               {{- end }}
             {{- end }}
           {{- end }}
       {{- end }}
+
+      # Single container
       {{- else }}
         - name: {{ include "global-one.fullname" . }}
           securityContext:
@@ -120,6 +137,8 @@ spec:
                 secretKeyRef:
                   name: {{ $value.secret.name | quote }}
                   key: {{ $value.secret.key | quote }}
+              {{- else if $value.service_url }}
+              value: {{- " " -}}{{- include "service.url" (dict "name" $value.service_url.name "port" $value.service_url.port) -}}
               {{- end }}
             {{- end }}
           {{- end }}

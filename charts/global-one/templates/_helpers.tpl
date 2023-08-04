@@ -26,6 +26,20 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+Create url to service
+*/}}
+{{- define "service.url" -}}
+{{- $namespace := "default" }}
+{{- if .Release }}
+  {{- if .Release.Namespace }}
+    {{- $namespace = .Release.Namespace }}
+  {{- end }}
+{{- end }}
+{{- printf "http://%s.%s.svc.cluster.local.:%s" .name $namespace .port  }}
+{{- end -}}
+
+
+{{/*
 Common labels
 */}}
 {{- define "global-one.labels" -}}

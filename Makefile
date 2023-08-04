@@ -10,7 +10,10 @@ login:
 	helm registry login registry-1.docker.io
 
 diff:
-	helm diff upgrade test charts/global-one --allow-unreleased --debug
+	helm diff upgrade test charts/global-one --allow-unreleased --context 1 --debug
+
+upgrade_or_install:
+	helm -n test upgrade --install test charts/global-one
 
 package:
 	@helm package charts/global-one --version=$(HELM_CHART_VERSION)
