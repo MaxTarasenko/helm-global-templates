@@ -10,7 +10,7 @@ repositories:
 releases:
   - name: node-test
     chart: global-one/global-one
-    version: 0.1.0
+    version: 0.1.1
     values:
       - values/values.yaml
       - values/{{ .Environment.Name }}.yaml
