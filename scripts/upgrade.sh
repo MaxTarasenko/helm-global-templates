@@ -37,12 +37,31 @@ for chart in $charts; do
       echo -e "$diff_output"
     fi
 
-    # Helm upgrade with namespace and override file selected
-    helm upgrade "$chart" "$helmGlobalChart" --version "$helmGlobalChartVersion" \
-      -f "$chartValues" \
-      -f image_values.yaml \
-      -n "$namespace" \
-      --wait --timeout 300s
+    # Check if the override file exists
+    overrideBaseName=${CHARTS_VALUE_OVERRIDE:-"override"}
+    overrideFile=""
+    if [ -f "$chartsValuesPath/$chart/$overrideBaseName.yaml" ]; then
+      overrideFile="$chartsValuesPath/$chart/$overrideBaseName.yaml"
+    elif [ -f "$chartsValuesPath/$chart/$overrideBaseName.yml" ]; then
+      overrideFile="$chartsValuesPath/$chart/$overrideBaseName.yml"
+    fi
+
+    if [ -f "$overrideFile" ]; then
+      # Helm upgrade with namespace and override file selected
+      helm upgrade "$chart" "$helmGlobalChart" --version "$helmGlobalChartVersion" \
+        -n "$namespace" \
+        -f "$chartValues" \
+        -f "$overrideFile" \
+        -f image_values.yaml \
+        --wait --timeout 300s
+    else
+      # Helm upgrade with namespace and without override file
+      helm upgrade "$chart" "$helmGlobalChart" --version "$helmGlobalChartVersion" \
+        -n "$namespace" \
+        -f "$chartValues" \
+        -f image_values.yaml \
+        --wait --timeout 300s
+    fi
 
     # Delete the temporary file
     rm image_values.yaml

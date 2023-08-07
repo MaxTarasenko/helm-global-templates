@@ -19,8 +19,9 @@
 
 #### run script (upgrade multiple services)
 Environment \
-`CHARTS_VALUES_PATH` \
-`NAMESPACE`
+`CHARTS_VALUES_PATH` - global path to values for helm charts \
+`NAMESPACE` - namespace \
+`CHARTS_VALUE_OVERRIDE` - if the override file exists
 ```
 sh <(curl -sSL https://raw.githubusercontent.com/MaxTarasenko/helm-global-templates/main/scripts/upgrade.sh)
 ```
