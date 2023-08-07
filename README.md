@@ -14,3 +14,13 @@
 <b>version:</b> 0.1.1
 </div>
 </h3>
+
+# Scripts
+
+#### run script (upgrade multiple services)
+Environment \
+`CHARTS_VALUES_PATH` \
+`NAMESPACE`
+```
+sh <(curl -sSL https://raw.githubusercontent.com/MaxTarasenko/helm-global-templates/main/scripts/upgrade.sh)
+```
