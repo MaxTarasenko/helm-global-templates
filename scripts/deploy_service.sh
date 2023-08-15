@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e  # Exit on error
 
 # Docker registry
 imageTag=${IMAGE_TAG:-"latest"}
