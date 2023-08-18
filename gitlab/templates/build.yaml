@@ -1,0 +1,41 @@
+stage:
+  - build
+
+variables:
+  # Default
+  IMAGE_TAG: latest-${CI_COMMIT_SHORT_SHA}
+  DOCKERFILE_PATH: ./Dockerfile
+  RUNNER_TAG: docker
+#  REGISTRY: gitlab.com:5050
+#  IMAGE_NAME: image_service_name
+#  IMAGE_ENV: dev
+#  IMAGE_BUILDER_TAG: universal
+
+Build:
+  image: mrmerseri/builder:${IMAGE_BUILDER_TAG}
+  tags: [ ${RUNNER_TAG} ]
+  stage: build
+  services:
+    - name: docker:dind
+      alias: docker
+  script:
+    - | # Create docker image
+      if [ -z ${IMAGE_ENV} ]; then
+        docker build -f ${DOCKERFILE_PATH} -t ${REGISTRY}/${IMAGE_NAME} .
+      else
+        docker build -f ${DOCKERFILE_PATH} -t ${REGISTRY}/${IMAGE_ENV}/${IMAGE_NAME} .
+      fi
+    - | # Docker tag
+      if [ -z ${IMAGE_ENV} ]; then
+        docker tag ${REGISTRY}/${IMAGE_NAME}:latest ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+      else
+        docker tag ${REGISTRY}/${IMAGE_ENV}/${IMAGE_NAME}:latest ${REGISTRY}/${IMAGE_ENV}/${IMAGE_NAME}:${IMAGE_TAG}
+      fi
+    - | # Push image
+      if [ -z ${IMAGE_ENV} ]; then
+        docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} && \
+        docker push ${REGISTRY}/${IMAGE_NAME}:latest
+      else
+        docker push ${REGISTRY}/${IMAGE_ENV}/${IMAGE_NAME}:${IMAGE_TAG} && \
+        docker push ${REGISTRY}/${IMAGE_ENV}/${IMAGE_NAME}:latest
+      fi
