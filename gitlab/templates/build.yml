@@ -1,3 +1,6 @@
+stages:
+  - build
+
 variables:
   # Default
   IMAGE_TAG: latest-${CI_COMMIT_SHORT_SHA}
