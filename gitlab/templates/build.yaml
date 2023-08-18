@@ -13,7 +13,7 @@ variables:
 
 Build:
   image: mrmerseri/builder:${IMAGE_BUILDER_TAG}
-  tags: [ ${RUNNER_TAG} ]
+  tags: [ $RUNNER_TAG ]
   stage: build
   services:
     - name: docker:dind
