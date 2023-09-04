@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e # Exit on error
 
 # Global Chart templates
 helmGlobalChart="oci://registry-1.docker.io/mrmerseri/global-one"
