@@ -1,0 +1,28 @@
+stages:
+  - deploy
+
+Deploy:
+  image: mrmerseri/builder:insk
+  stage: deploy
+  needs: [ "Build and Push" ]
+  tags: [ docker ]
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /master|main/ && $CI_PIPELINE_SOURCE != 'merge_request_event'
+      variables:
+        KUBECONFIG: $KUBE_CONFIG_UAT
+    - if: $CI_COMMIT_REF_NAME =~ /dev|develop/ && $CI_PIPELINE_SOURCE != 'merge_request_event'
+      variables:
+        KUBECONFIG: $KUBE_CONFIG_DEV
+  before_script:
+    - | # Fix permission kubeconfig file
+      chmod 600 $KUBECONFIG
+  script:
+    - | # Upgrade Helm
+      sh <(curl -sSL https://raw.githubusercontent.com/MaxTarasenko/helm-global-templates/main/scripts/deploy_service.sh)
+  artifacts:
+    paths:
+      - ./container.log
+      - ./describe_container.log
+    expire_in: 1 week
+    when: on_failure
+
