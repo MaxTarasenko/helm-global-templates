@@ -19,7 +19,8 @@ helmUpgradeTimeout=${HELM_UPGRADE_TIMEOUT:-"300s"}
 helm -n "${namespace}" upgrade "${helmChartName}" "${helmGlobalChart}" --version "${helmGlobalChartVersion}" \
   --reuse-values \
   --set image.tag="${imageTag}" \
-  --wait --timeout "${helmUpgradeTimeout}"
+  --wait --timeout "${helmUpgradeTimeout}" \
+  && true
 
 # Check status of upgrade
 chartStatus=$(helm -n "${namespace}" status "${helmChartName}" --output json | jq -r '.info.status')
@@ -34,7 +35,10 @@ if [[ "$chartStatus" == "failed" ]]; then
   while [ -z "$k8sPodName" ]
   do
     # Get the pod name
-    k8sPodName=$(kubectl -n "${namespace}" get pods -l "app.kubernetes.io/instance=${helmChartName}" | grep CrashLoopBackOff | awk '{print $1}')
+    k8sPodName=$(kubectl -n "${namespace}" get pods \
+    -l "app.kubernetes.io/instance=${helmChartName}" | \
+    grep -E 'CrashLoopBackOff|ImagePullBackOff' | \
+    awk '{print $1}')
   done
 
   echo "Pod name: ${k8sPodName}"
@@ -46,11 +50,12 @@ if [[ "$chartStatus" == "failed" ]]; then
   kubectl -n "${namespace}" describe pods "${k8sPodName}" > describe_container.log
 
   # Initiating rollback
-  if ! helm rollback -n "${namespace}" "${helmChartName}" --wait --timeout "${helmUpgradeTimeout}";
+  if ! helm rollback -n "${namespace}" "${helmChartName}";
   then
     echo "Error during helm rollback"
-    exit 1
   else
     echo "Upgrade failed. Helm successfully rolled back"
   fi
+
+  exit 1
 fi
