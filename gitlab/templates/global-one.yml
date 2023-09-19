@@ -1,0 +1,7 @@
+variables:
+  HELM_GLOBAL_CHART: oci://registry-1.docker.io/mrmerseri/global-one
+  HELM_GLOBAL_CHART_VERSION: 0.1.2
+  NAMESPACE: default
+  HELM_CHART_NAME: global-one
+  HELM_UPGRADE_TIMEOUT: 300s
+  CHARTS_VALUES_PATH: "./helmfile/values"
