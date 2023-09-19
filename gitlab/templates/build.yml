@@ -1,19 +1,16 @@
-stages:
-  - build
-
 variables:
-  # Default
-  IMAGE_TAG: latest-${CI_COMMIT_SHORT_SHA}
-  DOCKERFILE_PATH: ./Dockerfile
-  RUNNER_TAG: docker
+  # Registry
 #  REGISTRY: gitlab.com:5050
 #  IMAGE_NAME: image_service_name
 #  IMAGE_ENV: dev
-#  IMAGE_BUILDER_TAG: universal
 
-Build:
-  image: mrmerseri/builder:${IMAGE_BUILDER_TAG}
-  tags: [ $RUNNER_TAG ]
+  # with gitlab env
+  IMAGE_TAG: latest-${CI_COMMIT_SHORT_SHA}
+
+  # Docker
+  DOCKERFILE_PATH: ./Dockerfile
+
+.build_and_push:
   stage: build
   services:
     - name: docker:dind
