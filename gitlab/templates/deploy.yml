@@ -1,0 +1,11 @@
+.deploy_service:
+  stage: deploy
+  script:
+    - | # Upgrade Helm service
+      sh <(curl -sSL https://raw.githubusercontent.com/MaxTarasenko/helm-global-templates/main/scripts/deploy_service.sh)
+  artifacts:
+    paths:
+      - ./container.log
+      - ./describe_container.log
+    expire_in: 1 week
+    when: on_failure

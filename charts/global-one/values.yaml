@@ -101,6 +101,14 @@ volumeMounts: []
 #    mountPath: /keys/public.key
 #    subPath: gateway-public-key
 
+lifecycle: {}
+#  preStop:
+#    exec:
+#      command: ["/bin/sh","-c","/usr/sbin/nginx -s quit"]
+# postStart:
+#   exec:
+#     command: ["/bin/sh","-c","/usr/sbin/nginx -s reload"]
+
 healthCheck:
   livenessProbe:
     enable: false

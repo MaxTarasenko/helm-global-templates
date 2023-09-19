@@ -96,6 +96,11 @@ spec:
       # Single container
       {{- else }}
         - name: {{ include "global-one.fullname" . }}
+          {{ if .Values.lifecycle }}
+          lifecycle:
+             {{ toYaml .Values.lifecycle | nindent 12 }}
+
+          {{ end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: {{ include "global-one.image" . }}
