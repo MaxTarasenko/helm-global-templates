@@ -1,6 +1,8 @@
 .deploy_service:
   stage: deploy
   script:
+    - | # Fix permission kubeconfig file
+      chmod 600 $KUBECONFIG
     - | # Upgrade Helm service
       sh <(curl -sSL https://raw.githubusercontent.com/MaxTarasenko/helm-global-templates/main/scripts/deploy_service.sh)
   artifacts:
