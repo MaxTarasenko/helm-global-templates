@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e  # Exit on error
 
 # Docker registry
@@ -13,19 +13,19 @@ namespace=${NAMESPACE:-"default"}
 
 # Helm configuration
 helmChartName=${HELM_CHART_NAME:-"global-one"}
-helmUpgradeTimeout=${HELM_UPGRADE_TIMEOUT:-"300s"}
+helmUpgradeTimeout=${HELM_UPGRADE_TIMEOUT:-"300"}
 
 # Helm upgrade
 helm -n "${namespace}" upgrade "${helmChartName}" "${helmGlobalChart}" --version "${helmGlobalChartVersion}" \
   --reuse-values \
   --set image.tag="${imageTag}" \
-  --wait --timeout "${helmUpgradeTimeout}" \
+  --wait --timeout "${helmUpgradeTimeout}s" \
   && true
 
 # Check status of upgrade
 chartStatus=$(helm -n "${namespace}" status "${helmChartName}" --output json | jq -r '.info.status')
 
-if [[ "$chartStatus" == "failed" ]]; then
+if [ "$chartStatus" = "failed" ]; then
   echo "Chart status is FAILED, initiating rollback"
 
   # Initialize k8sPodName as empty string
@@ -44,7 +44,8 @@ if [[ "$chartStatus" == "failed" ]]; then
   echo "Pod name: ${k8sPodName}"
 
   # Write logs to file
-  kubectl -n "${namespace}" logs -p --since=15m "${k8sPodName}" > container.log || echo "Could not write logs"
+  kubectl -n "${namespace}" logs -p --since=15m "${k8sPodName}" > container.log ||\
+    echo "Could not write logs | Look at the describe_container.log file"
 
   # Write describe pod to file
   kubectl -n "${namespace}" describe pods "${k8sPodName}" > describe_container.log
