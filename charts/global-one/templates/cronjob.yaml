@@ -1,3 +1,4 @@
+{{ $globalValues := .Values }}
 {{ $env := include "global-one.env" . }}
 {{ $image := include "global-one.image" . }}
 {{- $labels := include "global-one.labels" . }}
@@ -58,11 +59,18 @@ spec:
           {{ else }}
           restartPolicy: OnFailure
           {{ end }}
-          {{ if .nodeSelector }}
+          {{ if or .nodeSelector .system }}
+          {{ if .system }}
+          {{- with $globalValues.nodeSelector }}
+          nodeSelector:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{ else }}
           {{- with .nodeSelector }}
           nodeSelector:
           {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{ end }}
           {{ else }}
           nodeSelector: { }
           {{ end }}
