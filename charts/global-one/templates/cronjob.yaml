@@ -1,0 +1,60 @@
+{{- $labels := include "global-one.labels" . }}
+
+{{- range .Values.cronjobs }}
+{{- if .enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .name }}
+  labels:
+    {{ $labels | nindent 4 }}
+spec:
+  jobTemplate:
+    spec:
+      {{ if .ttlSecondsAfterFinished }}
+      ttlSecondsAfterFinished: {{ .ttlSecondsAfterFinished }}
+      {{ else }}
+      ttlSecondsAfterFinished: 60
+      {{ end }}
+      template:
+        spec:
+          containers:
+            - name: {{ .name }}
+              image: {{ .image | quote }}
+              {{ if .imagePullPolicy }}
+              imagePullPolicy: {{ .imagePullPolicy }}
+              {{ else }}
+              imagePullPolicy: Always
+              {{ end }}
+              command: [ "/bin/sh", "-c" ]
+              args: {{ .args }}
+              {{- if .env }}
+              env:
+                {{- range $name, $value := .env }}
+                - name: {{ $name }}
+                  {{- if (typeOf $value) | eq "string" }}
+                  value: {{ $value | quote }}
+                  {{- else if $value.secret }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $value.secret.name | quote }}
+                      key: {{ $value.secret.key | quote }}
+                    {{- end }}
+                  {{- end }}
+              {{- end }}
+          {{ if .restartPolicy }}
+          restartPolicy: {{ .restartPolicy }}
+          {{ else }}
+          restartPolicy: OnFailure
+          {{ end }}
+          {{ if .nodeSelector }}
+          {{- with .nodeSelector }}
+          nodeSelector:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{ else }}
+          nodeSelector: { }
+          {{ end }}
+  schedule: {{ .schedule | quote }}
+{{- end }}
+{{- end }}

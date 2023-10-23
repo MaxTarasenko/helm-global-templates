@@ -204,3 +204,22 @@ serviceAccount:
 
 nameOverride: ""
 fullnameOverride: ""
+
+# --------------------------- CronJob ------------------------
+cronjobs:
+  - name: cron-1
+    enabled: false
+    image: busybox
+    schedule: "*/5 * * * *"
+    args: [ "echo starting; echo done;" ]
+    env:
+      test1: "test"
+      test2:
+        secret:
+          name: "test"
+          key: "test"
+    #--------Default--------
+    #nodeSelector: {}
+    #restartPolicy: OnFailure
+    #imagePullPolicy: Always
+    #ttlSecondsAfterFinished: 60

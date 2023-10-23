@@ -14,4 +14,15 @@ releases:
     values:
       - values/values.yaml
       - values/{{ .Environment.Name }}.yaml
+      - { { if or (eq .Environment.Name "dev1") (eq .Environment.Name "dev2") (eq .Environment.Name "dev3") (eq .Environment.Name "dev4") } }
+          values/dev.yaml
+          {{ end }}
+    installed: {{ or
+      (eq .Environment.Name "test")
+      (eq .Environment.Name "hotfix")
+      (eq .Environment.Name "dev1")
+      (eq .Environment.Name "dev2")
+      (eq .Environment.Name "dev3")
+      (eq .Environment.Name "dev4")
+    }}
 
