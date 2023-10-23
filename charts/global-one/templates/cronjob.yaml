@@ -2,6 +2,7 @@
 
 {{- range .Values.cronjobs }}
 {{- if .enabled }}
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
