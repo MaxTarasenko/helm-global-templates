@@ -209,6 +209,7 @@ fullnameOverride: ""
 cronjobs:
   - name: cron-1
     enabled: false
+    system: false
     image: busybox
     schedule: "*/5 * * * *"
     args: [ "echo starting; echo done;" ]
@@ -218,6 +219,11 @@ cronjobs:
         secret:
           name: "test"
           key: "test"
+  - name: cron-2
+    enabled: false
+    system: true
+    schedule: "*/5 * * * *"
+    args: [ "echo starting; echo done;" ]
     #--------Default--------
     #nodeSelector: {}
     #restartPolicy: OnFailure

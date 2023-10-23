@@ -1,3 +1,5 @@
+{{ $env := include "global-one.env" . }}
+{{ $image := include "global-one.image" . }}
 {{- $labels := include "global-one.labels" . }}
 
 {{- range .Values.cronjobs }}
@@ -21,7 +23,11 @@ spec:
         spec:
           containers:
             - name: {{ .name }}
+              {{ if .system }}
+              image: {{ $image }}
+              {{ else }}
               image: {{ .image | quote }}
+              {{ end }}
               {{ if .imagePullPolicy }}
               imagePullPolicy: {{ .imagePullPolicy }}
               {{ else }}
@@ -29,8 +35,11 @@ spec:
               {{ end }}
               command: [ "/bin/sh", "-c" ]
               args: {{ .args }}
-              {{- if .env }}
+              {{- if or .env .system }}
               env:
+                {{ if .system }}
+                {{ $env | nindent 16 }}
+                {{ else }}
                 {{- range $name, $value := .env }}
                 - name: {{ $name }}
                   {{- if (typeOf $value) | eq "string" }}
@@ -42,6 +51,7 @@ spec:
                       key: {{ $value.secret.key | quote }}
                     {{- end }}
                   {{- end }}
+                {{ end }}
               {{- end }}
           {{ if .restartPolicy }}
           restartPolicy: {{ .restartPolicy }}
