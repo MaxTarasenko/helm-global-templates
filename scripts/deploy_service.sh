@@ -6,14 +6,14 @@ imageTag=${IMAGE_TAG:-"latest"}
 
 # Global tpl configuration
 helmGlobalChart="oci://registry-1.docker.io/mrmerseri/global-one"
-helmGlobalChartVersion=${HELM_GLOBAL_CHART_VERSION:-"0.1.2"}
+helmGlobalChartVersion=${HELM_GLOBAL_CHART_VERSION:-"0.1.3"}
 
 # K8s configuration
 namespace=${NAMESPACE:-"default"}
 
 # Helm configuration
 helmChartName=${HELM_CHART_NAME:-"global-one"}
-helmUpgradeTimeout=${HELM_UPGRADE_TIMEOUT:-"300"}
+helmUpgradeTimeout=${HELM_UPGRADE_TIMEOUT:-"180"}
 
 # Run helm upgrade and save the output in the "output" variable
 output=$(helm -n "${namespace}" upgrade "${helmChartName}" "${helmGlobalChart}" --version "${helmGlobalChartVersion}" \

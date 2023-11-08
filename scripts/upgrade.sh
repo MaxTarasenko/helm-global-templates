@@ -1,17 +1,20 @@
 #!/bin/bash
 set -e # Exit on error
 
-# Global Chart templates
+# Global tpl configuration
 helmGlobalChart="oci://registry-1.docker.io/mrmerseri/global-one"
+
+# K8s configuration
+namespace=${NAMESPACE:-"default"}
+
+# Helm configuration
+helmUpgradeTimeout=${HELM_UPGRADE_TIMEOUT:-"180"}
 
 # Path to the charts values folder
 chartsValuesPath=${CHARTS_VALUES_PATH:-"./helmfile/values"}
 
 # Get a list of charts
 charts=$(ls "$chartsValuesPath")
-
-# Use the global variable NAMESPACE if it is set. Otherwise use 'insk-hotfix'.
-namespace=${NAMESPACE:-"default"}
 
 for chart in $charts; do
   if [ -d "$chartsValuesPath/$chart" ]; then
@@ -54,14 +57,14 @@ for chart in $charts; do
         -f "$chartValues" \
         -f "$overrideFile" \
         -f image_values.yaml \
-        --wait --timeout 300s
+        --wait --timeout "${helmUpgradeTimeout}s"
     else
       # Helm upgrade with namespace and without override file
       helm upgrade "$chart" "$helmGlobalChart" --version "$helmGlobalChartVersion" \
         -n "$namespace" \
         -f "$chartValues" \
         -f image_values.yaml \
-        --wait --timeout 300s
+        --wait --timeout "${helmUpgradeTimeout}s"
     fi
 
     # Delete the temporary file
