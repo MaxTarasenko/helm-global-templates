@@ -147,6 +147,7 @@ ingress:
 #        - path: /
 #     or - path: /service/(/|$)(.*)
 #          pathType: ImplementationSpecific
+#          port: 6001
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:

@@ -1,8 +1,14 @@
-diff:
-	helmfile diff
+SCRIPT_PATH := "./scripts/helmfile-per-release.sh"
+HELMFILE := "./helmfile.yaml"
 
-apply:
-	helmfile apply
+context:
+	@kubectx context-name
 
-delete:
+diff: context
+	$(SCRIPT_PATH) diff $(HELMFILE) env namespace
+
+apply: context
+	$(SCRIPT_PATH) apply $(HELMFILE) env namespace
+
+delete: context
 	helmfile destroy
