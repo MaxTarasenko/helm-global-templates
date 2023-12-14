@@ -6,7 +6,7 @@ imageTag=${IMAGE_TAG:-"latest"}
 
 # Global tpl configuration
 helmGlobalChart="oci://registry-1.docker.io/mrmerseri/global-one"
-helmGlobalChartVersion=${HELM_GLOBAL_CHART_VERSION:-"0.1.3"}
+helmGlobalChartVersion=${HELM_GLOBAL_CHART_VERSION:-"0.1.4"}
 
 # K8s configuration
 namespace=${NAMESPACE:-"default"}
