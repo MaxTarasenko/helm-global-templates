@@ -168,9 +168,17 @@ resources: {}
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 100
+  maxReplicas: 10
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
+  scaleUp:
+    Pods:
+      value: 1
+      periodSeconds: 15
+  scaleDown:
+    Pods:
+      value: 1
+      periodSeconds: 60
 
 imagePullSecrets: []
 

@@ -1,5 +1,9 @@
 {{- if .Values.autoscaling.enabled }}
+{{- if semverCompare ">=1.23-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: autoscaling/v2
+{{- else -}}
+apiVersion: autoscaling/v2beta2
+{{- end }}
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "global-one.fullname" . }}
@@ -29,4 +33,15 @@ spec:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
+  behavior:
+    scaleUp:
+      policies:
+        - type: Pods
+          value: {{ .Values.autoscaling.scaleUp.Pods.value }}
+          periodSeconds: {{ .Values.autoscaling.scaleUp.Pods.periodSeconds }}
+    scaleDown:
+      policies:
+        - type: Pods
+          value: {{ .Values.autoscaling.scaleDown.Pods.value }}
+          periodSeconds: {{ .Values.autoscaling.scaleDown.Pods.periodSeconds }}
 {{- end }}

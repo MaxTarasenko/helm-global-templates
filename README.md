@@ -11,7 +11,7 @@
 <b>chart:</b> global-one
 </div>
 <div style="font-weight: normal">
-<b>version:</b> 0.1.4
+<b>version:</b> 0.1.5
 </div>
 </h3>
 
