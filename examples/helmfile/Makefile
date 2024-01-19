@@ -17,6 +17,7 @@ prepare-script:
 	curl -o $(SCRIPT_PATH) $(SCRIPT_URL)
 	chmod +x $(SCRIPT_PATH)
 
+# Switch to kube context
 context:
 	@kubectx context-name
 
