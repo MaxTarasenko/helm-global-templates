@@ -8,6 +8,7 @@ HELMFILE := "./helmfile.yaml"
 HELMFILE_DEP := "./dependencies.yaml"
 
 # K8s configs
+CONTEXT := "context-name"
 NAMESPACE := "namespace-name"
 # if you need
 ENV := "env-name"
@@ -19,7 +20,7 @@ prepare-script:
 
 # Switch to kube context
 context:
-	@kubectx context-name
+	@kubectx $(CONTEXT)
 
 diff: context prepare-script
 	$(SCRIPT_PATH) diff $(HELMFILE) $(NAMESPACE) $(ENV)
