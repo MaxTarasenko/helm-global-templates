@@ -1,17 +1,12 @@
 templates:
   common: &common
     chart: oci://registry-1.docker.io/mrmerseri/global-one
-    version: 0.1.3
-    hooks:
-      - events: [ "prepare" ]
-        command: "sh"
-        args: [ "./scripts/get-values-hook.sh", "{{ .Namespace }}", "{{`{{ .Release.Name }}`}}" ]
-      - events: ["cleanup"]
-        command: "sh"
-        args: ["-c", "rm -f temp-values.yaml"]
+    version: 0.1.5
     values:
       - values/services/{{`{{ .Release.Name }}`}}/values.yaml
+      # if need specific Environment
       - values/services/{{`{{ .Release.Name }}`}}/{{ .Environment.Name }}.yaml
+      # if need specific values
       {{- if or (eq .Environment.Name "dev1") (eq .Environment.Name "dev2") (eq .Environment.Name "dev3") (eq .Environment.Name "dev4") }}
       - values/services/{{`{{ .Release.Name }}`}}/dev.yaml
       {{- end }}
@@ -19,6 +14,7 @@ templates:
 releases:
   - name: node-test
     <<: *common
+    # if need specific installed
     installed: {{ or
       (eq .Environment.Name "test")
       (eq .Environment.Name "hotfix")
@@ -29,7 +25,7 @@ releases:
     }}
 
 ---
-
+# if need specific Environment
 environments:
   prod: {}
   dev: {}

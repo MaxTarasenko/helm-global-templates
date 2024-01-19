@@ -36,9 +36,6 @@ helmfileStart() {
             # Process the values and extract the required data
             image_tag=$(echo "$values" | yq eval '.image.tag' -)
 
-            # Output the image tag
-            echo "Image tag: $image_tag"
-
             # Save the value to a file
             printf "image:\n  tag: %s\n" "$image_tag" > "$temp_values_path"
         else
@@ -55,7 +52,6 @@ helmfileStart() {
             else
                 helmfile "$COMMAND" -f "$HELMFILE" -n "$NAMESPACE" --values "$temp_values_path" -l name="$release" --context 1
             fi
-            pwd
             # Clean file temp-values.yaml after deploy
             rm "$temp_values_path"
         else
