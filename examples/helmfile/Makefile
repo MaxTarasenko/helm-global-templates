@@ -8,10 +8,10 @@ HELMFILE := "./helmfile.yaml"
 HELMFILE_DEP := "./dependencies.yaml"
 
 # K8s configs
-CONTEXT := "context-name"
-NAMESPACE := "namespace-name"
+CONTEXT := "context_name"
+NAMESPACE := "namespace_name"
 # if you need
-ENV := "env-name"
+ENV := "env_name"
 
 # Download and prepare the script
 prepare-script:

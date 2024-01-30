@@ -15,3 +15,23 @@ spec:
     {{- end }}
   selector:
     {{- include "global-one.selectorLabels" . | nindent 4 }}
+{{- if .Values.service.headless.enable }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ include "global-one.fullname" . }}-headless"
+  labels:
+    {{- include "global-one.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    {{- range .Values.service.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .name }}
+      protocol: TCP
+      name: {{ .name }}
+    {{- end }}
+  selector:
+    {{- include "global-one.selectorLabels" . | nindent 4 }}
+{{- end }}

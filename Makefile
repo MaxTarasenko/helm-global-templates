@@ -3,7 +3,7 @@ HELM_CHART_PACKAGE = $(shell ls *.tgz | head -n 1)
 DCR = registry-1.docker.io
 
 ifndef HELM_CHART_VERSION
-HELM_CHART_VERSION = 0.1.5
+HELM_CHART_VERSION = 0.1.6
 endif
 
 login:

@@ -130,6 +130,8 @@ service:
   ports:
     - name: http
       port: 80
+  headless:
+    enable: false
 
 ingress:
   enabled: false
