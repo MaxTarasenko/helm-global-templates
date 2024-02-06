@@ -15,7 +15,7 @@ ENV := "env_name"
 
 # Download and prepare the script
 prepare-script:
-	@curl -o $(SCRIPT_PATH) $(SCRIPT_URL)
+	@wget -q -O $(SCRIPT_PATH) $(SCRIPT_URL)
 	@chmod +x $(SCRIPT_PATH)
 
 # Switch to kube context
