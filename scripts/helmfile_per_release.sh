@@ -20,7 +20,6 @@ helmfileStart() {
     releases=$(yq e '.releases[].name' "$HELMFILE")
     # For values
     temp_values_path="$(dirname "$HELMFILE")/temp-values.yaml"
-    temp_values_path=$(realpath "$temp_values_path")
 
     for release in $releases; do
         # Function to check if the release exists
@@ -43,6 +42,8 @@ helmfileStart() {
             touch "$temp_values_path"
             echo "Release $release not found. Created an empty file."
         fi
+
+        temp_values_path=$(realpath "$temp_values_path")
 
         # Diff or Upgrade Helmfile
         echo "Execute $COMMAND for release $release"
