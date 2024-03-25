@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e  # Exit on error
 
 # Docker registry
 imageTag=${IMAGE_TAG:-"latest"}
@@ -25,12 +24,10 @@ output=$(helm -n "${namespace}" upgrade "${helmChartName}" "${helmGlobalChart}" 
 echo "$output"
 
 # Check if upgrade failed
-case "$output" in
-  *"Error: release: not found"*)
-    echo "Error: release: not found"
-    exit 1 # Exit with error
-    ;;
-esac
+if echo "$output" | grep -q "has no deployed releases"; then
+  echo "Error: release not found"
+  exit 1 # Exit with error
+fi
 
 # Check status of upgrade
 chartStatus=$(helm -n "${namespace}" status "${helmChartName}" --output json | jq -r '.info.status')
