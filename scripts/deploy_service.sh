@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 # Docker registry
 imageTag=${IMAGE_TAG:-"latest"}
