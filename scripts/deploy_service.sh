@@ -26,7 +26,10 @@ echo "$output"
 
 # Check if upgrade failed
 if echo "$output" | grep -q "has no deployed releases"; then
-  echo "Error: release not found"
+  echo "Error: Release not found"
+  exit 1 # Exit with error
+elif echo "$output" | grep -q "Error: UPGRADE FAILED: template"; then
+  echo "Error: Check your configuration"
   exit 1 # Exit with error
 fi
 
@@ -40,27 +43,25 @@ if [ "$chartStatus" = "failed" ]; then
   k8sPodName=""
 
   # Keep trying until k8sPodName is not empty
-  while [ -z "$k8sPodName" ]
-  do
+  while [ -z "$k8sPodName" ]; do
     # Get the pod name
     k8sPodName=$(kubectl -n "${namespace}" get pods \
-    -l "app.kubernetes.io/instance=${helmChartName}" | \
-    grep -E 'CrashLoopBackOff|ImagePullBackOff' | \
-    awk '{print $1}')
+      -l "app.kubernetes.io/instance=${helmChartName}" |
+      grep -E 'CrashLoopBackOff|ImagePullBackOff' |
+      awk '{print $1}')
   done
 
   echo "Pod name: ${k8sPodName}"
 
   # Write logs to file
-  kubectl -n "${namespace}" logs -p --since=15m "${k8sPodName}" > container.log ||\
+  kubectl -n "${namespace}" logs -p --since=15m "${k8sPodName}" >container.log ||
     echo "Could not write logs | Look at the describe_container.log file"
 
   # Write describe pod to file
-  kubectl -n "${namespace}" describe pods "${k8sPodName}" > describe_container.log
+  kubectl -n "${namespace}" describe pods "${k8sPodName}" >describe_container.log
 
   # Initiating rollback
-  if ! helm rollback -n "${namespace}" "${helmChartName}" --timeout "${helmUpgradeTimeout}s";
-  then
+  if ! helm rollback -n "${namespace}" "${helmChartName}" --timeout "${helmUpgradeTimeout}s"; then
     echo "Error during helm rollback"
   else
     echo "Upgrade failed. Helm successfully rolled back"
