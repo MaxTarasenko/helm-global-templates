@@ -61,7 +61,7 @@ if [ "$chartStatus" = "failed" ]; then
   kubectl -n "${namespace}" describe pods "${k8sPodName}" >describe_container.log
 
   # Initiating rollback
-  if ! helm rollback -n "${namespace}" "${helmChartName}" --timeout "${helmUpgradeTimeout}s"; then
+  if ! helm rollback -n "${namespace}" "${helmChartName}"; then
     echo "Error during helm rollback"
   else
     echo "Upgrade failed. Helm successfully rolled back"
