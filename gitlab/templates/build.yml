@@ -1,8 +1,8 @@
 variables:
   # Registry
-#  REGISTRY: gitlab.com:5050
-#  IMAGE_NAME: image_service_name
-#  IMAGE_ENV: dev
+  #  REGISTRY: registry.gitlab.com
+  #  IMAGE_NAME: image_service_name
+  #  IMAGE_ENV: dev
 
   # with gitlab env
   IMAGE_TAG: latest-${CI_COMMIT_SHORT_SHA}
@@ -12,9 +12,7 @@ variables:
 
 .build_and_push:
   stage: build
-  services:
-    - name: docker:dind
-      alias: docker
+  services: [ docker:dind ]
   script:
     - | # Create docker image
       if [ -z ${IMAGE_ENV} ]; then

@@ -1,5 +1,6 @@
 .deploy_service:
   stage: deploy
+  image: dtzar/helm-kubectl
   script:
     - | # Fix permission kubeconfig file
       chmod 600 $KUBECONFIG
