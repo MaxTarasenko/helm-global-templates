@@ -85,6 +85,9 @@ initContainers: []
 
 # Connect volumes in the pod (example)
 connectVolume: []
+#  - name: dockovpn-data
+#    persistentVolumeClaim:
+#      claimName: dockovpn-data
 #  - name: gateway-private-key
 #    secret:
 #      secretName: gateway-private-key
@@ -191,12 +194,14 @@ podSecurityContext: {}
   # fsGroup: 2000
 
 securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+#  seccompProfile:
+#    type: RuntimeDefault
+#  capabilities:
+#   drop:
+#   - ALL
+#  readOnlyRootFilesystem: true
+#  runAsNonRoot: true
+#  runAsUser: 1000
 
 nodeSelector: {}
 

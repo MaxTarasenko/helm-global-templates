@@ -1,0 +1,41 @@
+{{- $labels := include "global-one.labels" . -}}
+
+{{- if .Values.connectVolume }}
+{{- range .Values.connectVolume }}
+  {{- if .persistentVolumeClaim }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- $labels | nindent 4 }}
+  {{ with .persistentVolumeClaim.annotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- if .persistentVolumeClaim.accessModes }}
+    {{- range .persistentVolumeClaim.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+    {{- else }}
+    - "ReadWriteOnce"
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ default "1Gi" .persistentVolumeClaim.size | quote }}
+  {{- if .persistentVolumeClaim.storageClassName }}
+  storageClassName: "{{ .persistentVolumeClaim.storageClassName }}"
+  {{- end }}
+  {{- if .persistentVolumeClaim.selector }}
+  selector:
+    matchLabels:
+      {{- range $key, $value := .persistentVolumeClaim.selector.matchLabels }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}

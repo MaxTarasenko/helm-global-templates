@@ -1,3 +1,4 @@
+{{- $svcType := index .Values.service.type -}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -10,7 +11,10 @@ spec:
     {{- range .Values.service.ports }}
     - port: {{ .port }}
       targetPort: {{ .name }}
-      protocol: TCP
+      {{- if and (or (eq $svcType "LoadBalancer") (eq $svcType "NodePort")) .nodePort }}
+      nodePort: {{ .nodePort }}
+      {{- end }}
+      protocol: {{ .protocol | default "TCP" }}
       name: {{ .name }}
     {{- end }}
   selector:
@@ -29,7 +33,7 @@ spec:
     {{- range .Values.service.ports }}
     - port: {{ .port }}
       targetPort: {{ .name }}
-      protocol: TCP
+      protocol: {{ .protocol | default "TCP" }}
       name: {{ .name }}
     {{- end }}
   selector:
