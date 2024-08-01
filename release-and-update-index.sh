@@ -53,7 +53,7 @@ curl -s -X POST "$UPLOAD_URL?name=$(basename $TAR_FILE)" \
 echo "The $TAG release has been created and the $TAR_FILE file has been loaded."
 
 # Update index.yaml
-helm repo index . --url "$REPO_URL/releases/download/$TAG"
+helm repo index . --url "$REPO_URL/releases/download/"
 
 # Commit and push changes
 git add index.yaml
