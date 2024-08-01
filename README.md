@@ -11,9 +11,19 @@
 <b>chart:</b> global-one
 </div>
 <div style="font-weight: normal">
-<b>version:</b> 0.1.5
+<b>version:</b> 0.1.7
 </div>
 </h3>
+
+# Add the repository to Helm
+```shell
+helm repo add helm-global-templates https://maxtarasenko.github.io/helm-global-templates
+helm repo update
+```
+# Install
+```shell
+helm install my-release-name helm-global-templates/global-one
+```
 
 # Scripts
 
