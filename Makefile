@@ -24,3 +24,6 @@ package:
 deploy: package
 	@helm push $(HELM_CHART_PACKAGE) oci://$(DCR)/mrmerseri
 	@rm $(HELM_CHART_PACKAGE)
+
+release:
+	./release-and-update-index.sh
