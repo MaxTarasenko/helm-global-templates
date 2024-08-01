@@ -9,12 +9,13 @@ RELEASE_NAME=${RELEASE_NAME:-"global-one"}
 
 # Function to set KUBECONFIG
 set_kubeconfig() {
-  echo "Select KUBECONFIG option:"
+  echo "Select KUBECONFIG option (default: 1):"
   echo "1. Default KUBECONFIG ($HOME/.kube/config)"
   echo "2. Select from $HOME/.kube directory"
   echo "3. Specify a custom KUBECONFIG path"
 
-  read -p "Enter option number: " kubeconfig_option
+  read -p "Enter option number [1-3]: " kubeconfig_option
+  kubeconfig_option=${kubeconfig_option:-1} # Default to option 1
 
   case $kubeconfig_option in
     1)
@@ -52,7 +53,6 @@ add_helm_repo() {
   fi
 }
 
-
 # Function to check if the release exists
 release_exists() {
   helm ls -n "$NAMESPACE" | grep -q "$RELEASE_NAME"
@@ -79,24 +79,20 @@ perform_operation() {
         helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --context 2
       else
         echo "Release does not exist. Diff shows entire contents as new."
-        helm diff install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --context 2
+        helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased --context 2
       fi
       ;;
     apply)
       echo "Performing apply operation..."
       if release_exists; then
-        helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE"
+        helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --context 2
       else
-        helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE"
+        helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --context 2
       fi
       ;;
     sync)
       echo "Performing sync operation..."
-      if release_exists; then
-        helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE"
-      else
-        helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE"
-      fi
+      helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE"
       ;;
     *)
       echo "Invalid operation. Choose 'diff', 'apply', or 'sync'."
@@ -105,29 +101,40 @@ perform_operation() {
   esac
 }
 
+# Echo the namespace and release name
+echo "Namespace: $NAMESPACE"
+echo "Release name: $RELEASE_NAME"
+echo ""
+
 # Main script execution
-set_kubeconfig
 add_helm_repo
+echo ""
+set_kubeconfig
+echo ""
 
 # Main menu
-echo "Select operation:"
+echo "Select operation (default: 1):"
 echo "1. diff"
 echo "2. apply"
 echo "3. sync"
 
-read -p "Enter action number: " operation
+read -p "Enter action number [1-3]: " operation
+operation=${operation:-1} # Default to option 1
 
 # Perform the chosen operation
 case $operation in
   1)
+    echo "Using default operation: diff"
     get_image_tag
     perform_operation "diff"
     ;;
   2)
+    echo "Using operation: apply"
     get_image_tag
     perform_operation "apply"
     ;;
   3)
+    echo "Using operation: sync"
     get_image_tag
     perform_operation "sync"
     ;;
