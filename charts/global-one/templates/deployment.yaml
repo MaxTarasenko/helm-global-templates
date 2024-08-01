@@ -11,6 +11,15 @@ spec:
   selector:
     matchLabels:
       {{- include "global-one.selectorLabels" . | nindent 6 }}
+  strategy:
+    {{- if eq .Values.strategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge | default "25%" }}
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable | default "25%" }}
+    type: RollingUpdate
+    {{- else }}
+    type: Recreate
+    {{- end }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}

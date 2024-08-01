@@ -2,7 +2,21 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+configMap: []
+#  - name: configmap1
+#    data: |
+#      env = dev
+#      port = 80
+#  - name: configmap2
+#    fileData: "configMap/server.conf"
+
 replicaCount: 1
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: "25%"
+    maxUnavailable: "25%"
 
 image:
   repository:
@@ -91,18 +105,18 @@ connectVolume: []
 #  - name: gateway-private-key
 #    secret:
 #      secretName: gateway-private-key
-#  - name: gateway-public-key
-#    secret:
-#      secretName: gateway-public-key
+#  - name: dockovpn-config
+#    configMap:
+#      name: dockovpn-config
 
 # Mounts volumes to container when one container
 volumeMounts: []
 #  - name: gateway-private-key
 #    mountPath: /keys/private.key
 #    subPath: gateway-private-key
-#  - name: gateway-public-key
-#    mountPath: /keys/public.key
-#    subPath: gateway-public-key
+#  - name: dockovpn-config
+#    mountPath: /opt/Dockovpn/config
+#    subPath: server.conf
 
 lifecycle: {}
 #  preStop:
