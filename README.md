@@ -3,6 +3,12 @@
 helm repo add helm-global-templates https://maxtarasenko.github.io/helm-global-templates
 helm repo update
 ```
+
+# List version
+```shell
+helm search repo helm-global-templates
+```
+
 # Install
 ```shell
 helm install my-release-name helm-global-templates/global-one

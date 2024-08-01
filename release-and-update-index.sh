@@ -51,13 +51,14 @@ curl -s -X POST "$UPLOAD_URL?name=$(basename $TAR_FILE)" \
   --data-binary @"$TAR_FILE"
 
 echo "The $TAG release has been created and the $TAR_FILE file has been loaded."
+rm "$TAR_FILE"
 
 # Update index.yaml
 helm repo index . --url "$REPO_URL/releases/download/"
 
 # Commit and push changes
-git add index.yaml
-git commit -m "Update index.yaml for release $TAG"
+git add .
+git commit -m "Create release $TAG"
 git push origin main
 
 echo "index.yaml has been updated and uploaded to the repository."
