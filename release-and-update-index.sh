@@ -73,7 +73,7 @@ echo "The $CHART_VERSION release has been created and the $TAR_FILE file has bee
 # Update index.yaml
 echo "Updating index.yaml..."
 REPO_URL="https://github.com/MaxTarasenko/helm-global-templates/releases/download"
-helm repo index . --url "$REPO_URL/v$CHART_VERSION"
+helm repo index . --merge index.yaml --url "$REPO_URL/v$CHART_VERSION"
 
 rm "$TAR_FILE"
 
