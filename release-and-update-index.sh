@@ -7,7 +7,7 @@ export $(grep -v '^#' .env | xargs)
 REPO="maxtarasenko/helm-global-templates"
 CHART_PATH="charts/global-one"
 CHART_NAME="global-one"
-TAG="0.1.6"
+TAG=$(yq eval '.version' ${CHART_PATH}/Chart.yaml)
 RELEASE_NAME="Release $TAG"
 DESCRIPTION="global-one helm chart"
 GITHUB_TOKEN=${GITHUB_TOKEN:-"token"}
