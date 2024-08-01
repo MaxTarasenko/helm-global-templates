@@ -13,7 +13,6 @@ RELEASE_NAME="Release $CHART_VERSION"
 
 REPO="maxtarasenko/helm-global-templates"
 GITHUB_TOKEN=${GITHUB_TOKEN:-"token"}
-REPO_URL="https://github.com/MaxTarasenko/helm-global-templates"
 BRANCH="main"
 
 # Package the chart
@@ -70,11 +69,13 @@ curl -s -X POST "$UPLOAD_URL?name=$(basename $TAR_FILE)" \
   --data-binary @"$TAR_FILE"
 
 echo "The $CHART_VERSION release has been created and the $TAR_FILE file has been loaded."
-rm "$TAR_FILE"
 
 # Update index.yaml
 echo "Updating index.yaml..."
-helm repo index . --url "$REPO_URL/releases/download/"
+REPO_URL="https://github.com/MaxTarasenko/helm-global-templates/releases/download"
+helm repo index . --url "$REPO_URL/v$CHART_VERSION"
+
+rm "$TAR_FILE"
 
 # Commit and push changes
 git add .
