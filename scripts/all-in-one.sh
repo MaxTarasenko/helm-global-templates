@@ -1,13 +1,101 @@
 #!/bin/bash
 
-# Variables
+# Default Variables
 REPO_NAME="helm-global-templates"
 REPO_URL="https://maxtarasenko.github.io/helm-global-templates"
 CHART_NAME="global-one"
 NAMESPACE=${NAMESPACE:-"default"}
-RELEASE_NAME=${RELEASE_NAME:-"global-one"}
-STANDARD_VALUES_FILE=""  # Variable to store the selected standard values.yaml file
-ENV_VALUES_FILE=""       # Variable to store the selected environment-specific values.yaml file
+STANDARD_VALUES_FILE=""
+ENV_VALUES_FILE=""
+OPERATION=""
+DIRECTORY=""
+ALL_DIRECTORIES=false
+ENV_FILE_NAME=""
+
+# Function to parse command-line arguments
+parse_args() {
+  while [[ "$#" -gt 0 ]]; do
+    case $1 in
+      -d|--directory)
+        DIRECTORY="$2"
+        shift
+        ;;
+      -a|--all)
+        ALL_DIRECTORIES=true
+        ;;
+      -n|--namespace)
+        NAMESPACE="$2"
+        shift
+        ;;
+      -r|--release)
+        RELEASE_NAME="$2"
+        shift
+        ;;
+      -o|--operation)
+        OPERATION="$2"
+        shift
+        ;;
+      -k|--kubeconfig)
+        set_kubeconfig
+        ;;
+      -e|--env-file)
+        ENV_FILE_NAME="$2"
+        shift
+        ;;
+      *)
+        echo "Unknown parameter: $1"
+        exit 1
+        ;;
+    esac
+    shift
+  done
+}
+
+# Function to select a base directory if not provided
+select_base_directory() {
+  if [ -z "$DIRECTORY" ]; then
+    echo "Select a base directory:"
+    select dir in */; do
+      DIRECTORY="${dir%/}" # Remove trailing slash
+      echo "Using base directory: $DIRECTORY"
+      break
+    done
+  else
+    echo "Using specified base directory: $DIRECTORY"
+  fi
+}
+
+# Function to iterate through subdirectories
+iterate_subdirectories() {
+  for subdir in "$DIRECTORY"/*/; do
+    RELEASE_NAME="${subdir%/}" # Use subdirectory name as release name
+    RELEASE_NAME="${RELEASE_NAME##*/}" # Remove path to get just the directory name
+    STANDARD_VALUES_FILE="$subdir/values.yaml"
+    ENV_VALUES_FILE="$subdir/$ENV_FILE_NAME"
+
+    select_env_values_file
+    perform_directory_operation
+  done
+}
+
+# Function to select environment-specific values.yaml file
+select_env_values_file() {
+  if [ -n "$ENV_FILE_NAME" ]; then
+    ENV_VALUES_FILE="$DIRECTORY/$RELEASE_NAME/$ENV_FILE_NAME"
+    if [ -f "$ENV_VALUES_FILE" ]; then
+      echo "Using specified environment-specific values file: $ENV_VALUES_FILE"
+    else
+      echo "Specified environment file $ENV_VALUES_FILE does not exist."
+      ENV_VALUES_FILE=""
+    fi
+  elif [ -f "$DIRECTORY/$RELEASE_NAME/env.yaml" ]; then
+    ENV_VALUES_FILE="$DIRECTORY/$RELEASE_NAME/env.yaml"
+    echo "Using environment-specific values file: $ENV_VALUES_FILE"
+  else
+    ENV_VALUES_FILE=""
+    echo "No environment-specific values file found for $RELEASE_NAME."
+  fi
+}
 
 # Function to set KUBECONFIG
 set_kubeconfig() {
@@ -72,83 +160,48 @@ get_image_tag() {
   fi
 }
 
-# Function to choose standard values.yaml file
-select_standard_values_file() {
-  echo "Select standard values.yaml option (default: values.yaml):"
-  echo "1. Use default values (values.yaml)"
-  echo "2. Select from current directory"
-  echo "3. Specify a custom values.yaml path"
+# Function to perform the operation on a directory
+perform_directory_operation() {
+  echo "Namespace: $NAMESPACE"
+  echo "Release name: $RELEASE_NAME"
+  echo "Using standard values file: $STANDARD_VALUES_FILE"
+  echo "Using environment-specific values file: ${ENV_VALUES_FILE:-None}"
+  echo ""
 
-  read -p "Enter option number [1-3]: " values_option
-  values_option=${values_option:-1} # Default to option 1
+  # Determine operation
+  if [ -z "$OPERATION" ]; then
+    echo "Select operation (default: 1):"
+    echo "1. diff"
+    echo "2. apply"
+    echo "3. sync"
 
-  case $values_option in
-    1)
-      STANDARD_VALUES_FILE="values.yaml" # Use default values
-      echo "Using default values file."
-      ;;
-    2)
-      echo "Available values.yaml files in current directory:"
-      select values_file in ./*.yaml; do
-        STANDARD_VALUES_FILE="$values_file"
-        echo "Using selected standard values file: $STANDARD_VALUES_FILE"
-        break
-      done
-      ;;
-    3)
-      read -p "Enter custom standard values.yaml path: " custom_values_file
-      STANDARD_VALUES_FILE="$custom_values_file"
-      echo "Using custom standard values file: $STANDARD_VALUES_FILE"
-      ;;
-    *)
-      echo "Invalid option. Using default chart values."
-      STANDARD_VALUES_FILE="" # Default to no values file
-      ;;
-  esac
-}
+    read -p "Enter action number [1-3]: " operation
+    operation=${operation:-1} # Default to option 1
 
-# Function to choose environment-specific values.yaml file
-select_env_values_file() {
-  echo "Select environment-specific values.yaml option (default: skip):"
-  echo "1. Use no additional values file"
-  echo "2. Select from current directory"
-  echo "3. Specify a custom values.yaml path"
+    case $operation in
+      1) OPERATION="diff" ;;
+      2) OPERATION="apply" ;;
+      3) OPERATION="sync" ;;
+      *) echo "Invalid operation" ;;
+    esac
+  fi
 
-  read -p "Enter option number [1-3]: " env_values_option
-  env_values_option=${env_values_option:-1} # Default to option 1
-
-  case $env_values_option in
-    1)
-      ENV_VALUES_FILE="" # Use no additional values file
-      echo "No environment-specific values file specified."
-      ;;
-    2)
-      echo "Available values.yaml files in current directory:"
-      select env_file in ./*.yaml; do
-        ENV_VALUES_FILE="$env_file"
-        echo "Using selected environment-specific values file: $ENV_VALUES_FILE"
-        break
-      done
-      ;;
-    3)
-      read -p "Enter custom environment-specific values.yaml path: " custom_env_file
-      ENV_VALUES_FILE="$custom_env_file"
-      echo "Using custom environment-specific values file: $ENV_VALUES_FILE"
-      ;;
-    *)
-      echo "Invalid option. No environment-specific values file specified."
-      ENV_VALUES_FILE="" # Default to no additional values file
-      ;;
-  esac
+  if [[ "$OPERATION" =~ ^(diff|apply|sync)$ ]]; then
+    echo "Using operation: $OPERATION"
+    get_image_tag
+    perform_operation "$OPERATION"
+  else
+    echo "Invalid operation: $OPERATION. Choose 'diff', 'apply', or 'sync'."
+  fi
 }
 
 # Function to perform the chosen operation
 perform_operation() {
   VALUES_FLAGS=""
-  if [[ -n $STANDARD_VALUES_FILE ]]; then
+  if [[ -f $STANDARD_VALUES_FILE ]]; then
     VALUES_FLAGS="$VALUES_FLAGS --values $STANDARD_VALUES_FILE"
   fi
-  if [[ -n $ENV_VALUES_FILE ]]; then
+  if [[ -f $ENV_VALUES_FILE ]]; then
     VALUES_FLAGS="$VALUES_FLAGS --values $ENV_VALUES_FILE"
   fi
 
@@ -181,48 +234,26 @@ perform_operation() {
   esac
 }
 
-# Echo the namespace and release name
-echo "Namespace: $NAMESPACE"
-echo "Release name: $RELEASE_NAME"
-echo ""
-
 # Main script execution
+parse_args "$@"
 add_helm_repo
 echo ""
-set_kubeconfig
-echo ""
-select_standard_values_file
-echo ""
-select_env_values_file
-echo ""
 
-# Main menu
-echo "Select operation (default: 1):"
-echo "1. diff"
-echo "2. apply"
-echo "3. sync"
+# Select the base directory if not provided
+select_base_directory
 
-read -p "Enter action number [1-3]: " operation
-operation=${operation:-1} # Default to option 1
-
-# Perform the chosen operation
-case $operation in
-  1)
-    echo "Using operation: diff"
-    get_image_tag
-    perform_operation "diff"
-    ;;
-  2)
-    echo "Using operation: apply"
-    get_image_tag
-    perform_operation "apply"
-    ;;
-  3)
-    echo "Using operation: sync"
-    get_image_tag
-    perform_operation "sync"
-    ;;
-  *)
-    echo "Invalid operation"
-    ;;
-esac
+# Iterate over subdirectories if -a is specified
+if $ALL_DIRECTORIES; then
+  iterate_subdirectories
+else
+  RELEASE_NAME="${DIRECTORY##*/}" # Use specified directory as release name
+  STANDARD_VALUES_FILE="$DIRECTORY/values.yaml"
+  # Set the ENV_VALUES_FILE to user-specified or default to directory env.yaml
+  if [ -n "$ENV_FILE_NAME" ]; then
+    ENV_VALUES_FILE="$DIRECTORY/$ENV_FILE_NAME"
+  else
+    ENV_VALUES_FILE="$DIRECTORY/env.yaml"
+  fi
+  select_env_values_file
+  perform_directory_operation
+fi
