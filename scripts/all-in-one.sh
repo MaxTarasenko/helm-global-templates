@@ -3,14 +3,36 @@
 # Default Variables
 REPO_NAME="helm-global-templates"
 REPO_URL="https://maxtarasenko.github.io/helm-global-templates"
-CHART_NAME="global-one"
+CHART_NAME=${CHART_NAME:-"global-one"}
 NAMESPACE=${NAMESPACE:-"default"}
 STANDARD_VALUES_FILE=""
 ENV_VALUES_FILE=""
-OPERATION=""
-DIRECTORY=""
+OPERATION=${OPERATION:-""}
+DIRECTORY=${DIRECTORY:-""}
 ALL_DIRECTORIES=false
-ENV_FILE_NAME=""
+ENV_FILE_NAME=${ENV_FILE_NAME:-""}
+IMAGE_TAG=""
+
+# Function to display help message
+show_help() {
+  echo "Usage: $0 [options]"
+  echo ""
+  echo "Options:"
+  echo "  -d, --directory       Specify the base directory for Helm charts."
+  echo "  -a, --all             Iterate over all subdirectories as separate releases."
+  echo "  -n, --namespace       Specify the Kubernetes namespace."
+  echo "  -r, --release         Specify the release name."
+  echo "  -o, --operation       Specify the operation (diff, apply, sync)."
+  echo "  -k, --kubeconfig      Set the KUBECONFIG to use."
+  echo "  -e, --env-file        Specify the environment-specific values file."
+  echo "  -t, --image-tag       Specify the image tag to use."
+  echo "  -h, --help            Display this help message."
+  echo ""
+  echo "Examples:"
+  echo "  $0 -n mynamespace -r myrelease -t newtag"
+  echo "  $0 -d mycharts/ -o apply"
+  exit 0
+}
 
 # Function to parse command-line arguments
 parse_args() {
@@ -41,6 +63,13 @@ parse_args() {
       -e|--env-file)
         ENV_FILE_NAME="$2.yaml"
         shift
+        ;;
+      -t|--image-tag)
+        IMAGE_TAG="$2"
+        shift
+        ;;
+      -h|--help)
+        show_help
         ;;
       *)
         echo "Unknown parameter: $1"
@@ -195,8 +224,22 @@ get_image_tag() {
     values=$(helm get values "$RELEASE_NAME" -n "$NAMESPACE")
     image_tag=$(echo "$values" | yq eval '.image.tag' -)
     echo "Current image tag: $image_tag"
+    IMAGE_TAG=${IMAGE_TAG:-$image_tag}
   else
     echo "Release $RELEASE_NAME does not exist."
+  fi
+}
+
+# Function to update the image tag
+update_image_tag() {
+  if release_exists; then
+    echo "Updating image tag to $IMAGE_TAG for release $RELEASE_NAME"
+    helm get values "$RELEASE_NAME" -n "$NAMESPACE" > current-values.yaml
+    yq eval ".image.tag = \"$IMAGE_TAG\"" current-values.yaml > updated-values.yaml
+    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" -f updated-values.yaml
+    rm current-values.yaml updated-values.yaml
+  else
+    echo "Release $RELEASE_NAME does not exist, cannot update image tag."
   fi
 }
 
@@ -245,6 +288,11 @@ perform_operation() {
     VALUES_FLAGS="$VALUES_FLAGS --values $ENV_VALUES_FILE"
   fi
 
+  # Use the existing image tag if not overridden by the IMAGE_TAG variable
+  if [ -n "$IMAGE_TAG" ]; then
+    VALUES_FLAGS="$VALUES_FLAGS --set image.tag=$IMAGE_TAG"
+  fi
+
   case $1 in
     diff)
       echo "Performing diff operation..."
@@ -279,19 +327,24 @@ parse_args "$@"
 add_helm_repo
 echo ""
 
-# Select the base directory if not provided
-select_base_directory
-
-# Iterate over subdirectories if -a is specified
-if $ALL_DIRECTORIES; then
-  iterate_subdirectories
+# Check if IMAGE_TAG is provided for updating
+if [ -n "$IMAGE_TAG" ]; then
+  update_image_tag
 else
-  select_subdirectory # Choose subdirectory if values.yaml not found
-  RELEASE_NAME="${DIRECTORY##*/}" # Use specified directory as release name
-  STANDARD_VALUES_FILE="$DIRECTORY/values.yaml"
+  # Select the base directory if not provided
+  select_base_directory
 
-  # Set the ENV_VALUES_FILE to user-specified or default to directory env.yaml
-  select_env_values_file
+  # Iterate over subdirectories if -a is specified
+  if $ALL_DIRECTORIES; then
+    iterate_subdirectories
+  else
+    select_subdirectory # Choose subdirectory if values.yaml not found
+    RELEASE_NAME="${DIRECTORY##*/}" # Use specified directory as release name
+    STANDARD_VALUES_FILE="$DIRECTORY/values.yaml"
 
-  perform_directory_operation
+    # Set the ENV_VALUES_FILE to user-specified or default to directory env.yaml
+    select_env_values_file
+
+    perform_directory_operation
+  fi
 fi
