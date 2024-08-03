@@ -3,7 +3,7 @@
 # Default Variables
 REPO_NAME="helm-global-templates"
 REPO_URL="https://maxtarasenko.github.io/helm-global-templates"
-CHART_NAME=${CHART_NAME:-"global-one"}
+CHART_NAME="global-one"
 NAMESPACE=${NAMESPACE:-"default"}
 STANDARD_VALUES_FILE=""
 ENV_VALUES_FILE=""
@@ -11,28 +11,8 @@ OPERATION=${OPERATION:-""}
 DIRECTORY=${DIRECTORY:-""}
 ALL_DIRECTORIES=false
 ENV_FILE_NAME=${ENV_FILE_NAME:-""}
-IMAGE_TAG=""
-
-# Function to display help message
-show_help() {
-  echo "Usage: $0 [options]"
-  echo ""
-  echo "Options:"
-  echo "  -d, --directory       Specify the base directory for Helm charts."
-  echo "  -a, --all             Iterate over all subdirectories as separate releases."
-  echo "  -n, --namespace       Specify the Kubernetes namespace."
-  echo "  -r, --release         Specify the release name."
-  echo "  -o, --operation       Specify the operation (diff, apply, sync)."
-  echo "  -k, --kubeconfig      Set the KUBECONFIG to use."
-  echo "  -e, --env-file        Specify the environment-specific values file."
-  echo "  -t, --image-tag       Specify the image tag to use."
-  echo "  -h, --help            Display this help message."
-  echo ""
-  echo "Examples:"
-  echo "  $0 -n mynamespace -r myrelease -t newtag"
-  echo "  $0 -d mycharts/ -o apply"
-  exit 0
-}
+IMAGE_TAG=${IMAGE_TAG:-""}
+RELEASE_NAME=${RELEASE_NAME:-""}
 
 # Function to parse command-line arguments
 parse_args() {
@@ -67,9 +47,6 @@ parse_args() {
       -t|--image-tag)
         IMAGE_TAG="$2"
         shift
-        ;;
-      -h|--help)
-        show_help
         ;;
       *)
         echo "Unknown parameter: $1"
@@ -224,7 +201,6 @@ get_image_tag() {
     values=$(helm get values "$RELEASE_NAME" -n "$NAMESPACE")
     image_tag=$(echo "$values" | yq eval '.image.tag' -)
     echo "Current image tag: $image_tag"
-    IMAGE_TAG=${IMAGE_TAG:-$image_tag}
   else
     echo "Release $RELEASE_NAME does not exist."
   fi
@@ -288,7 +264,6 @@ perform_operation() {
     VALUES_FLAGS="$VALUES_FLAGS --values $ENV_VALUES_FILE"
   fi
 
-  # Use the existing image tag if not overridden by the IMAGE_TAG variable
   if [ -n "$IMAGE_TAG" ]; then
     VALUES_FLAGS="$VALUES_FLAGS --set image.tag=$IMAGE_TAG"
   fi
