@@ -39,7 +39,7 @@ parse_args() {
         set_kubeconfig
         ;;
       -e|--env-file)
-        ENV_FILE_NAME="$2"
+        ENV_FILE_NAME="$2.yaml"
         shift
         ;;
       *)
@@ -65,6 +65,22 @@ select_base_directory() {
   fi
 }
 
+# Function to check and select a subdirectory with values.yaml
+select_subdirectory() {
+  while [ ! -f "$DIRECTORY/values.yaml" ]; do
+    echo "No values.yaml found in $DIRECTORY. Select a subdirectory:"
+    select subdir in "$DIRECTORY"/*/; do
+      DIRECTORY="${subdir%/}" # Remove trailing slash
+      echo "Checking in subdirectory: $DIRECTORY"
+      if [ -f "$DIRECTORY/values.yaml" ]; then
+        echo "Found values.yaml in $DIRECTORY."
+        break
+      fi
+      echo "values.yaml not found in selected subdirectory."
+    done
+  done
+}
+
 # Function to iterate through subdirectories
 iterate_subdirectories() {
   for subdir in "$DIRECTORY"/*/; do
@@ -81,19 +97,43 @@ iterate_subdirectories() {
 # Function to select environment-specific values.yaml file
 select_env_values_file() {
   if [ -n "$ENV_FILE_NAME" ]; then
-    ENV_VALUES_FILE="$DIRECTORY/$RELEASE_NAME/$ENV_FILE_NAME"
+    ENV_VALUES_FILE="$DIRECTORY/$ENV_FILE_NAME"
     if [ -f "$ENV_VALUES_FILE" ]; then
       echo "Using specified environment-specific values file: $ENV_VALUES_FILE"
     else
       echo "Specified environment file $ENV_VALUES_FILE does not exist."
       ENV_VALUES_FILE=""
     fi
-  elif [ -f "$DIRECTORY/$RELEASE_NAME/env.yaml" ]; then
-    ENV_VALUES_FILE="$DIRECTORY/$RELEASE_NAME/env.yaml"
-    echo "Using environment-specific values file: $ENV_VALUES_FILE"
   else
-    ENV_VALUES_FILE=""
-    echo "No environment-specific values file found for $RELEASE_NAME."
+    # Scan for additional YAML files and offer selection
+    yaml_files=($(ls "$DIRECTORY"/*.yaml 2>/dev/null | grep -v "values.yaml"))
+    if [ "${#yaml_files[@]}" -gt 0 ]; then
+      echo "Found additional YAML files:"
+      options=("${yaml_files[@]##*/}" "Skip")
+      for i in "${!options[@]}"; do
+        echo "$((i+1))) ${options[$i]}"
+      done
+
+      read -p "Choose an environment file [default: Skip]: " choice
+      choice=${choice:-$(( ${#options[@]} ))} # Default to the last option (Skip) if no choice is made
+
+      if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -le "${#options[@]}" ] && [ "$choice" -gt 0 ]; then
+        env_file="${options[$((choice-1))]}"
+        if [ "$env_file" == "Skip" ]; then
+          ENV_VALUES_FILE=""
+          echo "Skipping additional environment-specific values file."
+        else
+          ENV_VALUES_FILE="$DIRECTORY/$env_file"
+          echo "Using selected environment-specific values file: $ENV_VALUES_FILE"
+        fi
+      else
+        echo "Invalid selection. Skipping additional environment-specific values file."
+        ENV_VALUES_FILE=""
+      fi
+    else
+      echo "No additional environment-specific values file found."
+      ENV_VALUES_FILE=""
+    fi
   fi
 }
 
@@ -246,14 +286,12 @@ select_base_directory
 if $ALL_DIRECTORIES; then
   iterate_subdirectories
 else
+  select_subdirectory # Choose subdirectory if values.yaml not found
   RELEASE_NAME="${DIRECTORY##*/}" # Use specified directory as release name
   STANDARD_VALUES_FILE="$DIRECTORY/values.yaml"
+
   # Set the ENV_VALUES_FILE to user-specified or default to directory env.yaml
-  if [ -n "$ENV_FILE_NAME" ]; then
-    ENV_VALUES_FILE="$DIRECTORY/$ENV_FILE_NAME"
-  else
-    ENV_VALUES_FILE="$DIRECTORY/env.yaml"
-  fi
   select_env_values_file
+
   perform_directory_operation
 fi
