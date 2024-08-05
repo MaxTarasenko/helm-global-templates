@@ -238,7 +238,7 @@ deploy_image_tag() {
   if release_exists; then
     echo "Existing release found. Upgrading with new image tag."
     previous_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" --max 1 | awk 'NR==2{print $1}')
-    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --set image.tag="$IMAGE_TAG"
+    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --set image.tag="$IMAGE_TAG" --reuse-values
 
     # Check if the deployment succeeded
     if [ $? -ne 0 ]; then
@@ -247,41 +247,84 @@ deploy_image_tag() {
       return
     fi
 
-    # Check the status of the pods in the release
+    # Get the latest replica set by sorting based on the creation timestamp and filtering by desired replicas
+    latest_rs=$(kubectl get rs -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
+                 --sort-by=.metadata.creationTimestamp -o jsonpath='{range .items[?(@.status.replicas!=0)]}{.metadata.name}{"\n"}{end}' | tail -1)
+
+    echo "Latest Replica Set: $latest_rs"
+
+    # Extract the pod-template-hash to track new pods from this replica set
+    latest_hash="${latest_rs##*-}"
+
+    echo "Pod Template Hash for Latest RS: $latest_hash"
+
+    # Monitor the status of pods from the new replica set
     echo "Checking pod status..."
     sleep_interval=10
     max_restarts=3
     max_checks=30
 
     for ((i=0; i<max_checks; i++)); do
-      # Get the pods and check their status, filtering only the latest pods
+      # Get the pods associated with the latest replica set
       pod_status=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
-                   -o jsonpath='{range .items[*]}{.metadata.name}:{.status.containerStatuses[0].restartCount}:{.status.containerStatuses[0].state.waiting.reason}{"\n"}{end}')
+                   -o jsonpath='{range .items[*]}{.metadata.name}:{.metadata.labels.pod-template-hash}:{.status.phase}:{.status.containerStatuses[0].restartCount}:{.status.containerStatuses[0].state.waiting.reason}{"\n"}{end}')
+
+      echo "Detected Pods:"
+      echo "$pod_status"
+
+      new_pods=false
+      all_pods_ready=true
 
       # Check each pod's restart count and status
       for status in $pod_status; do
         pod_name=$(echo $status | cut -d':' -f1)
-        restart_count=$(echo $status | cut -d':' -f2)
-        waiting_reason=$(echo $status | cut -d':' -f3)
+        pod_hash=$(echo $status | cut -d':' -f2)
+        pod_phase=$(echo $status | cut -d':' -f3)
+        restart_count=$(echo $status | cut -d':' -f4)
+        waiting_reason=$(echo $status | cut -d':' -f5)
 
-        echo "Pod $pod_name has $restart_count restarts. Status: $waiting_reason"
+        # Only process pods from the latest replica set
+        if [[ "$pod_hash" == "$latest_hash" ]]; then
+          new_pods=true
+          echo "Pod $pod_name has $restart_count restarts. Status: $waiting_reason, Phase: $pod_phase"
 
-        if [ "$restart_count" -gt "$max_restarts" ]; then
-          echo "Pod $pod_name is restarting too frequently. Rolling back to revision $previous_revision."
-          capture_logs "$pod_name"
-          helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
-          return
-        fi
+          if [ "$restart_count" -gt "$max_restarts" ]; then
+            echo "Pod $pod_name is restarting too frequently. Rolling back to revision $previous_revision."
+            capture_logs "$pod_name"
+            helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
+            return
+          fi
 
-        if [[ "$waiting_reason" == "ImagePullBackOff" || "$waiting_reason" == "CrashLoopBackOff" ]]; then
-          echo "Pod $pod_name is in state $waiting_reason. Rolling back to revision $previous_revision."
-          capture_logs "$pod_name"
-          helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
-          return
+          if [[ "$waiting_reason" == "ImagePullBackOff" || "$waiting_reason" == "CrashLoopBackOff" || "$waiting_reason" == "ErrImagePull" ]]; then
+            echo "Pod $pod_name is in state $waiting_reason. Rolling back to revision $previous_revision."
+            capture_logs "$pod_name"
+            helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
+            return
+          fi
+
+          if [ "$pod_phase" != "Running" ]; then
+            all_pods_ready=false
+          fi
         fi
       done
 
-      echo "Pods are stable. Continuing to monitor..."
+      if [ "$new_pods" = false ]; then
+        echo "No new pods found yet. Waiting..."
+      elif [ "$all_pods_ready" = true ]; then
+        echo "All new pods are running and ready. Checking for old pods..."
+
+        # Check if old pods are terminated
+        old_pods=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
+                   --field-selector=status.phase!=Running \
+                   -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+
+        if [ -z "$old_pods" ]; then
+          echo "All old pods have terminated. Deployment successful."
+          return
+        fi
+      fi
+
+      echo "Continuing to monitor..."
       sleep $sleep_interval
     done
 
