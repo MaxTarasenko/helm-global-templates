@@ -39,43 +39,43 @@ show_help() {
 parse_args() {
   while [[ "$#" -gt 0 ]]; do
     case $1 in
-      -d|--directory)
-        DIRECTORY="$2"
-        shift
-        ;;
-      -a|--all)
-        ALL_DIRECTORIES=true
-        ;;
-      -n|--namespace)
-        NAMESPACE="$2"
-        shift
-        ;;
-      -r|--release)
-        RELEASE_NAME="$2"
-        shift
-        ;;
-      -o|--operation)
-        OPERATION="$2"
-        shift
-        ;;
-      -k|--kubeconfig)
-        set_kubeconfig
-        ;;
-      -e|--env-file)
-        ENV_FILE_NAME="$2.yaml"
-        shift
-        ;;
-      -t|--image-tag)
-        IMAGE_TAG="$2"
-        shift
-        ;;
-      -h|--help)
-        show_help
-        ;;
-      *)
-        echo "Unknown parameter: $1"
-        exit 1
-        ;;
+    -d | --directory)
+      DIRECTORY="$2"
+      shift
+      ;;
+    -a | --all)
+      ALL_DIRECTORIES=true
+      ;;
+    -n | --namespace)
+      NAMESPACE="$2"
+      shift
+      ;;
+    -r | --release)
+      RELEASE_NAME="$2"
+      shift
+      ;;
+    -o | --operation)
+      OPERATION="$2"
+      shift
+      ;;
+    -k | --kubeconfig)
+      set_kubeconfig
+      ;;
+    -e | --env-file)
+      ENV_FILE_NAME="$2.yaml"
+      shift
+      ;;
+    -t | --image-tag)
+      IMAGE_TAG="$2"
+      shift
+      ;;
+    -h | --help)
+      show_help
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      exit 1
+      ;;
     esac
     shift
   done
@@ -114,7 +114,7 @@ select_subdirectory() {
 # Function to iterate through subdirectories
 iterate_subdirectories() {
   for subdir in "$DIRECTORY"/*/; do
-    RELEASE_NAME="${subdir%/}" # Use subdirectory name as release name
+    RELEASE_NAME="${subdir%/}"         # Use subdirectory name as release name
     RELEASE_NAME="${RELEASE_NAME##*/}" # Remove path to get just the directory name
     STANDARD_VALUES_FILE="$subdir/values.yaml"
     ENV_VALUES_FILE="$subdir/$ENV_FILE_NAME"
@@ -141,14 +141,14 @@ select_env_values_file() {
       echo "Found additional YAML files:"
       options=("${yaml_files[@]##*/}" "Skip")
       for i in "${!options[@]}"; do
-        echo "$((i+1))) ${options[$i]}"
+        echo "$((i + 1))) ${options[$i]}"
       done
 
       read -p "Choose an environment file [default: Skip]: " choice
-      choice=${choice:-$(( ${#options[@]} ))} # Default to the last option (Skip) if no choice is made
+      choice=${choice:-$((${#options[@]}))} # Default to the last option (Skip) if no choice is made
 
       if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -le "${#options[@]}" ] && [ "$choice" -gt 0 ]; then
-        env_file="${options[$((choice-1))]}"
+        env_file="${options[$((choice - 1))]}"
         if [ "$env_file" == "Skip" ]; then
           ENV_VALUES_FILE=""
           echo "Skipping additional environment-specific values file."
@@ -178,27 +178,27 @@ set_kubeconfig() {
   kubeconfig_option=${kubeconfig_option:-1} # Default to option 1
 
   case $kubeconfig_option in
-    1)
-      export KUBECONFIG="$HOME/.kube/config"
-      echo "Using default KUBECONFIG: $KUBECONFIG"
-      ;;
-    2)
-      echo "Available KUBECONFIG files in $HOME/.kube:"
-      select kube_file in $HOME/.kube/*; do
-        export KUBECONFIG="$kube_file"
-        echo "Using selected KUBECONFIG: $KUBECONFIG"
-        break
-      done
-      ;;
-    3)
-      read -p "Enter custom KUBECONFIG path: " custom_kubeconfig
-      export KUBECONFIG="$custom_kubeconfig"
-      echo "Using custom KUBECONFIG: $KUBECONFIG"
-      ;;
-    *)
-      echo "Invalid option. Using default KUBECONFIG."
-      export KUBECONFIG="$HOME/.kube/config"
-      ;;
+  1)
+    export KUBECONFIG="$HOME/.kube/config"
+    echo "Using default KUBECONFIG: $KUBECONFIG"
+    ;;
+  2)
+    echo "Available KUBECONFIG files in $HOME/.kube:"
+    select kube_file in $HOME/.kube/*; do
+      export KUBECONFIG="$kube_file"
+      echo "Using selected KUBECONFIG: $KUBECONFIG"
+      break
+    done
+    ;;
+  3)
+    read -p "Enter custom KUBECONFIG path: " custom_kubeconfig
+    export KUBECONFIG="$custom_kubeconfig"
+    echo "Using custom KUBECONFIG: $KUBECONFIG"
+    ;;
+  *)
+    echo "Invalid option. Using default KUBECONFIG."
+    export KUBECONFIG="$HOME/.kube/config"
+    ;;
   esac
 }
 
@@ -249,7 +249,7 @@ deploy_image_tag() {
 
     # Get the latest replica set by sorting based on the creation timestamp and filtering by desired replicas
     latest_rs=$(kubectl get rs -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
-                 --sort-by=.metadata.creationTimestamp -o jsonpath='{range .items[?(@.status.replicas!=0)]}{.metadata.name}{"\n"}{end}' | tail -1)
+      --sort-by=.metadata.creationTimestamp -o jsonpath='{range .items[?(@.status.replicas!=0)]}{.metadata.name}{"\n"}{end}' | tail -1)
 
     echo "Latest Replica Set: $latest_rs"
 
@@ -264,10 +264,10 @@ deploy_image_tag() {
     max_restarts=3
     max_checks=30
 
-    for ((i=0; i<max_checks; i++)); do
+    for ((i = 0; i < max_checks; i++)); do
       # Get the pods associated with the latest replica set
       pod_status=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
-                   -o jsonpath='{range .items[*]}{.metadata.name}:{.metadata.labels.pod-template-hash}:{.status.phase}:{.status.containerStatuses[0].restartCount}:{.status.containerStatuses[0].state.waiting.reason}{"\n"}{end}')
+        -o jsonpath='{range .items[*]}{.metadata.name}:{.metadata.labels.pod-template-hash}:{.status.phase}:{.status.containerStatuses[0].restartCount}:{.status.containerStatuses[0].state.waiting.reason}{"\n"}{end}')
 
       echo "Detected Pods:"
       echo "$pod_status"
@@ -315,8 +315,8 @@ deploy_image_tag() {
 
         # Check if old pods are terminated
         old_pods=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
-                   --field-selector=status.phase!=Running \
-                   -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+          --field-selector=status.phase!=Running \
+          -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
 
         if [ -z "$old_pods" ]; then
           echo "All old pods have terminated. Deployment successful."
@@ -340,14 +340,13 @@ capture_logs() {
   echo "Capturing logs for pod $pod_name..."
 
   # Capture container logs
-  kubectl logs "$pod_name" -n "$NAMESPACE" > "${pod_name}.log" 2>&1
+  kubectl logs "$pod_name" -n "$NAMESPACE" >"${pod_name}.log" 2>&1
 
   # Capture describe output
-  kubectl describe pod "$pod_name" -n "$NAMESPACE" > "${pod_name}_describe.log" 2>&1
+  kubectl describe pod "$pod_name" -n "$NAMESPACE" >"${pod_name}_describe.log" 2>&1
 
   echo "Logs captured: ${pod_name}.log, ${pod_name}_describe.log"
 }
-
 
 # Function to perform the operation on a directory
 perform_directory_operation() {
@@ -368,10 +367,10 @@ perform_directory_operation() {
     operation=${operation:-1} # Default to option 1
 
     case $operation in
-      1) OPERATION="diff" ;;
-      2) OPERATION="apply" ;;
-      3) OPERATION="sync" ;;
-      *) echo "Invalid operation" ;;
+    1) OPERATION="diff" ;;
+    2) OPERATION="apply" ;;
+    3) OPERATION="sync" ;;
+    *) echo "Invalid operation" ;;
     esac
   fi
 
@@ -400,31 +399,31 @@ perform_operation() {
   fi
 
   case $1 in
-    diff)
-      echo "Performing diff operation..."
-      if release_exists; then
-        helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS --context 2
-      else
-        echo "Release does not exist. Diff shows entire contents as new."
-        helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased $VALUES_FLAGS --context 2
-      fi
-      ;;
-    apply)
-      echo "Performing apply operation..."
-      if release_exists; then
-        helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
-      else
-        helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
-      fi
-      ;;
-    sync)
-      echo "Performing sync operation..."
-      helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
-      ;;
-    *)
-      echo "Invalid operation. Choose 'diff', 'apply', or 'sync'."
-      exit 1
-      ;;
+  diff)
+    echo "Performing diff operation..."
+    if release_exists; then
+      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS --context 2
+    else
+      echo "Release does not exist. Diff shows entire contents as new."
+      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased $VALUES_FLAGS --context 2
+    fi
+    ;;
+  apply)
+    echo "Performing apply operation..."
+    if release_exists; then
+      helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
+    else
+      helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
+    fi
+    ;;
+  sync)
+    echo "Performing sync operation..."
+    helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
+    ;;
+  *)
+    echo "Invalid operation. Choose 'diff', 'apply', or 'sync'."
+    exit 1
+    ;;
   esac
 }
 
@@ -444,7 +443,7 @@ else
   if $ALL_DIRECTORIES; then
     iterate_subdirectories
   else
-    select_subdirectory # Choose subdirectory if values.yaml not found
+    select_subdirectory             # Choose subdirectory if values.yaml not found
     RELEASE_NAME="${DIRECTORY##*/}" # Use specified directory as release name
     STANDARD_VALUES_FILE="$DIRECTORY/values.yaml"
 
