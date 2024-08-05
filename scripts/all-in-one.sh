@@ -11,8 +11,29 @@ OPERATION=${OPERATION:-""}
 DIRECTORY=${DIRECTORY:-""}
 ALL_DIRECTORIES=false
 ENV_FILE_NAME=${ENV_FILE_NAME:-""}
-IMAGE_TAG=${IMAGE_TAG:-""}
+IMAGE_TAG=""
 RELEASE_NAME=${RELEASE_NAME:-""}
+
+# Function to display help message
+show_help() {
+  echo "Usage: $0 [options]"
+  echo ""
+  echo "Options:"
+  echo "  -d, --directory       Specify the base directory for Helm charts."
+  echo "  -a, --all             Iterate over all subdirectories as separate releases."
+  echo "  -n, --namespace       Specify the Kubernetes namespace."
+  echo "  -r, --release         Specify the release name."
+  echo "  -o, --operation       Specify the operation (diff, apply, sync)."
+  echo "  -k, --kubeconfig      Set the KUBECONFIG to use."
+  echo "  -e, --env-file        Specify the environment-specific values file."
+  echo "  -t, --image-tag       Specify the image tag to use."
+  echo "  -h, --help            Display this help message."
+  echo ""
+  echo "Examples:"
+  echo "  $0 -n mynamespace -r myrelease -t newtag"
+  echo "  $0 -d mycharts/ -o apply"
+  exit 0
+}
 
 # Function to parse command-line arguments
 parse_args() {
@@ -47,6 +68,9 @@ parse_args() {
       -t|--image-tag)
         IMAGE_TAG="$2"
         shift
+        ;;
+      -h|--help)
+        show_help
         ;;
       *)
         echo "Unknown parameter: $1"
@@ -201,23 +225,86 @@ get_image_tag() {
     values=$(helm get values "$RELEASE_NAME" -n "$NAMESPACE")
     image_tag=$(echo "$values" | yq eval '.image.tag' -)
     echo "Current image tag: $image_tag"
+    IMAGE_TAG=${IMAGE_TAG:-$image_tag}
   else
     echo "Release $RELEASE_NAME does not exist."
   fi
 }
 
-# Function to update the image tag
-update_image_tag() {
+# Function for simple image tag deployment with rollback
+deploy_image_tag() {
+  echo "Deploying image tag $IMAGE_TAG to release $RELEASE_NAME in namespace $NAMESPACE"
+
   if release_exists; then
-    echo "Updating image tag to $IMAGE_TAG for release $RELEASE_NAME"
-    helm get values "$RELEASE_NAME" -n "$NAMESPACE" > current-values.yaml
-    yq eval ".image.tag = \"$IMAGE_TAG\"" current-values.yaml > updated-values.yaml
-    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" -f updated-values.yaml
-    rm current-values.yaml updated-values.yaml
+    echo "Existing release found. Upgrading with new image tag."
+    previous_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" --max 1 | awk 'NR==2{print $1}')
+    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --set image.tag="$IMAGE_TAG"
+
+    # Check if the deployment succeeded
+    if [ $? -ne 0 ]; then
+      echo "Upgrade failed. Rolling back to revision $previous_revision."
+      helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
+      return
+    fi
+
+    # Check the status of the pods in the release
+    echo "Checking pod status..."
+    sleep_interval=10
+    max_restarts=3
+    max_checks=30
+
+    for ((i=0; i<max_checks; i++)); do
+      # Get the pods and check their status, filtering only the latest pods
+      pod_status=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
+                   -o jsonpath='{range .items[*]}{.metadata.name}:{.status.containerStatuses[0].restartCount}:{.status.containerStatuses[0].state.waiting.reason}{"\n"}{end}')
+
+      # Check each pod's restart count and status
+      for status in $pod_status; do
+        pod_name=$(echo $status | cut -d':' -f1)
+        restart_count=$(echo $status | cut -d':' -f2)
+        waiting_reason=$(echo $status | cut -d':' -f3)
+
+        echo "Pod $pod_name has $restart_count restarts. Status: $waiting_reason"
+
+        if [ "$restart_count" -gt "$max_restarts" ]; then
+          echo "Pod $pod_name is restarting too frequently. Rolling back to revision $previous_revision."
+          capture_logs "$pod_name"
+          helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
+          return
+        fi
+
+        if [[ "$waiting_reason" == "ImagePullBackOff" || "$waiting_reason" == "CrashLoopBackOff" ]]; then
+          echo "Pod $pod_name is in state $waiting_reason. Rolling back to revision $previous_revision."
+          capture_logs "$pod_name"
+          helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
+          return
+        fi
+      done
+
+      echo "Pods are stable. Continuing to monitor..."
+      sleep $sleep_interval
+    done
+
+    echo "Deployment successful. Pods are stable."
   else
-    echo "Release $RELEASE_NAME does not exist, cannot update image tag."
+    echo "Release not found. Skipping deployment since the release doesn't exist."
   fi
 }
+
+# Function to capture logs for a specific pod
+capture_logs() {
+  pod_name="$1"
+  echo "Capturing logs for pod $pod_name..."
+
+  # Capture container logs
+  kubectl logs "$pod_name" -n "$NAMESPACE" > "${pod_name}.log" 2>&1
+
+  # Capture describe output
+  kubectl describe pod "$pod_name" -n "$NAMESPACE" > "${pod_name}_describe.log" 2>&1
+
+  echo "Logs captured: ${pod_name}.log, ${pod_name}_describe.log"
+}
+
 
 # Function to perform the operation on a directory
 perform_directory_operation() {
@@ -264,6 +351,7 @@ perform_operation() {
     VALUES_FLAGS="$VALUES_FLAGS --values $ENV_VALUES_FILE"
   fi
 
+  # Use the existing image tag if not overridden by the IMAGE_TAG variable
   if [ -n "$IMAGE_TAG" ]; then
     VALUES_FLAGS="$VALUES_FLAGS --set image.tag=$IMAGE_TAG"
   fi
@@ -304,7 +392,7 @@ echo ""
 
 # Check if IMAGE_TAG is provided for updating
 if [ -n "$IMAGE_TAG" ]; then
-  update_image_tag
+  deploy_image_tag
 else
   # Select the base directory if not provided
   select_base_directory
