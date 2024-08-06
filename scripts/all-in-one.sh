@@ -4,6 +4,7 @@
 REPO_NAME="helm-global-templates"
 REPO_URL="https://maxtarasenko.github.io/helm-global-templates"
 CHART_NAME="global-one"
+CHART_VERSION=${CHART_VERSION:-""}
 NAMESPACE=${NAMESPACE:-"default"}
 STANDARD_VALUES_FILE=""
 ENV_VALUES_FILE=""
@@ -27,6 +28,7 @@ show_help() {
   echo "  -k, --kubeconfig      Set the KUBECONFIG to use."
   echo "  -e, --env-file        Specify the environment-specific values file."
   echo "  -t, --image-tag       Specify the image tag to use."
+  echo "  -c, --chart-version   Specify the chart version to use."
   echo "  -h, --help            Display this help message."
   echo ""
   echo "Examples:"
@@ -67,6 +69,10 @@ parse_args() {
       ;;
     -t | --image-tag)
       IMAGE_TAG="$2"
+      shift
+      ;;
+    -c | --chart-version)
+      CHART_VERSION="$2"
       shift
       ;;
     -h | --help)
@@ -136,6 +142,8 @@ select_env_values_file() {
     fi
   else
     # Scan for additional YAML files and offer selection
+    # shellcheck disable=SC2207
+    # shellcheck disable=SC2010
     yaml_files=($(ls "$DIRECTORY"/*.yaml 2>/dev/null | grep -v "values.yaml"))
     if [ "${#yaml_files[@]}" -gt 0 ]; then
       echo "Found additional YAML files:"
@@ -144,6 +152,7 @@ select_env_values_file() {
         echo "$((i + 1))) ${options[$i]}"
       done
 
+      # shellcheck disable=SC2162
       read -p "Choose an environment file [default: Skip]: " choice
       choice=${choice:-$((${#options[@]}))} # Default to the last option (Skip) if no choice is made
 
@@ -174,6 +183,7 @@ set_kubeconfig() {
   echo "2. Select from $HOME/.kube directory"
   echo "3. Specify a custom KUBECONFIG path"
 
+  # shellcheck disable=SC2162
   read -p "Enter option number [1-3]: " kubeconfig_option
   kubeconfig_option=${kubeconfig_option:-1} # Default to option 1
 
@@ -191,6 +201,7 @@ set_kubeconfig() {
     done
     ;;
   3)
+    # shellcheck disable=SC2162
     read -p "Enter custom KUBECONFIG path: " custom_kubeconfig
     export KUBECONFIG="$custom_kubeconfig"
     echo "Using custom KUBECONFIG: $KUBECONFIG"
@@ -236,11 +247,18 @@ deploy_image_tag() {
   echo "Deploying image tag $IMAGE_TAG to release $RELEASE_NAME in namespace $NAMESPACE"
 
   if release_exists; then
+    # Include the chart version if specified
+    CHART_VERSION_FLAG=""
+    if [ -n "$CHART_VERSION" ]; then
+      CHART_VERSION_FLAG="--version $CHART_VERSION"
+    fi
+
     echo "Existing release found. Upgrading with new image tag."
     previous_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" --max 1 | awk 'NR==2{print $1}')
-    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --set image.tag="$IMAGE_TAG" --reuse-values
+    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" "$CHART_VERSION_FLAG" -n "$NAMESPACE" --set image.tag="$IMAGE_TAG" --reuse-values
 
     # Check if the deployment succeeded
+    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
       echo "Upgrade failed. Rolling back to revision $previous_revision."
       helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
@@ -278,11 +296,11 @@ deploy_image_tag() {
 
       # Check each pod's restart count and status
       for status in $pod_status; do
-        pod_name=$(echo $status | cut -d':' -f1)
-        pod_hash=$(echo $status | cut -d':' -f2)
-        pod_phase=$(echo $status | cut -d':' -f3)
-        restart_count=$(echo $status | cut -d':' -f4)
-        waiting_reason=$(echo $status | cut -d':' -f5)
+        pod_name=$(echo "$status" | cut -d':' -f1)
+        pod_hash=$(echo "$status" | cut -d':' -f2)
+        pod_phase=$(echo "$status" | cut -d':' -f3)
+        restart_count=$(echo "$status" | cut -d':' -f4)
+        waiting_reason=$(echo "$status" | cut -d':' -f5)
 
         # Only process pods from the latest replica set
         if [[ "$pod_hash" == "$latest_hash" ]]; then
@@ -361,6 +379,7 @@ perform_directory_operation() {
     echo "2. apply"
     echo "3. sync"
 
+    # shellcheck disable=SC2162
     read -p "Enter action number [1-3]: " operation
     operation=${operation:-1} # Default to option 1
 
@@ -396,27 +415,33 @@ perform_operation() {
     VALUES_FLAGS="$VALUES_FLAGS --set image.tag=$IMAGE_TAG"
   fi
 
+  # Include the chart version if specified
+  CHART_VERSION_FLAG=""
+  if [ -n "$CHART_VERSION" ]; then
+    CHART_VERSION_FLAG="--version $CHART_VERSION"
+  fi
+
   case $1 in
   diff)
     echo "Performing diff operation..."
     if release_exists; then
-      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS --context 2
+      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG" --context 2
     else
       echo "Release does not exist. Diff shows entire contents as new."
-      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased $VALUES_FLAGS --context 2
+      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased "$VALUES_FLAGS" "$CHART_VERSION_FLAG" --context 2
     fi
     ;;
   apply)
     echo "Performing apply operation..."
     if release_exists; then
-      helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
+      helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG"
     else
-      helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
+      helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG"
     fi
     ;;
   sync)
     echo "Performing sync operation..."
-    helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS
+    helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG"
     ;;
   *)
     echo "Invalid operation. Choose 'diff', 'apply', or 'sync'."
