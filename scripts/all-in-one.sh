@@ -222,7 +222,7 @@ release_exists() {
 get_image_tag() {
   if release_exists; then
     echo "Extracting image tag from existing release..."
-    values=$(helm get values "$RELEASE_NAME" -n "$NAMESPACE")
+    values=$(helm get values "$RELEASE_NAME" -n "$NAMESPACE" -a)
     image_tag=$(echo "$values" | yq eval '.image.tag' -)
     echo "Current image tag: $image_tag"
     IMAGE_TAG=${IMAGE_TAG:-$image_tag}
@@ -274,6 +274,7 @@ deploy_image_tag() {
 
       new_pods=false
       all_pods_ready=true
+      old_pods_terminated=true
 
       # Check each pod's restart count and status
       for status in $pod_status; do
@@ -305,23 +306,20 @@ deploy_image_tag() {
           if [ "$pod_phase" != "Running" ]; then
             all_pods_ready=false
           fi
+        else
+          # Check if old pods are terminated
+          if [ "$pod_phase" != "Terminating" ] && [ "$pod_phase" != "Succeeded" ]; then
+            old_pods_terminated=false
+            echo "Old pod $pod_name is still running or terminating. Waiting..."
+          fi
         fi
       done
 
       if [ "$new_pods" = false ]; then
         echo "No new pods found yet. Waiting..."
-      elif [ "$all_pods_ready" = true ]; then
-        echo "All new pods are running and ready. Checking for old pods..."
-
-        # Check if old pods are terminated
-        old_pods=$(kubectl get pods -n "$NAMESPACE" -l app.kubernetes.io/instance="$RELEASE_NAME" \
-          --field-selector=status.phase!=Running \
-          -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
-
-        if [ -z "$old_pods" ]; then
-          echo "All old pods have terminated. Deployment successful."
-          return
-        fi
+      elif [ "$all_pods_ready" = true ] && [ "$old_pods_terminated" = true ]; then
+        echo "All new pods are running and ready, and all old pods have terminated. Deployment successful."
+        return
       fi
 
       echo "Continuing to monitor..."
