@@ -42,7 +42,7 @@ parse_args() {
   while [[ "$#" -gt 0 ]]; do
     case $1 in
     -d | --directory)
-      DIRECTORY="$2"
+      DIRECTORY="${2%/}" # Remove trailing slash
       shift
       ;;
     -a | --all)
@@ -64,7 +64,7 @@ parse_args() {
       set_kubeconfig
       ;;
     -e | --env-file)
-      ENV_FILE_NAME="$2.yaml"
+      ENV_FILE_NAME="$2"
       shift
       ;;
     -t | --image-tag)
@@ -97,6 +97,7 @@ select_base_directory() {
       break
     done
   else
+    DIRECTORY="${DIRECTORY%/}" # Ensure no trailing slash
     echo "Using specified base directory: $DIRECTORY"
   fi
 }
@@ -123,7 +124,20 @@ iterate_subdirectories() {
     RELEASE_NAME="${subdir%/}"         # Use subdirectory name as release name
     RELEASE_NAME="${RELEASE_NAME##*/}" # Remove path to get just the directory name
     STANDARD_VALUES_FILE="$subdir/values.yaml"
-    ENV_VALUES_FILE="$subdir/$ENV_FILE_NAME"
+
+    # Use the environment file if ENV_FILE_NAME is set
+    if [ -n "$ENV_FILE_NAME" ]; then
+      ENV_VALUES_FILE="$subdir/$ENV_FILE_NAME.yaml"
+      if [ ! -f "$ENV_VALUES_FILE" ]; then
+        echo "Specified environment file $ENV_VALUES_FILE does not exist for subdirectory $subdir."
+        ENV_VALUES_FILE=""
+      fi
+    else
+      ENV_VALUES_FILE=""
+    fi
+
+    # Reset the image tag for each service
+    IMAGE_TAG=""
 
     select_env_values_file
     perform_directory_operation
@@ -132,47 +146,44 @@ iterate_subdirectories() {
 
 # Function to select environment-specific values.yaml file
 select_env_values_file() {
-  if [ -n "$ENV_FILE_NAME" ]; then
-    ENV_VALUES_FILE="$DIRECTORY/$ENV_FILE_NAME"
+  if [ -n "$ENV_VALUES_FILE" ]; then
     if [ -f "$ENV_VALUES_FILE" ]; then
       echo "Using specified environment-specific values file: $ENV_VALUES_FILE"
+      return
     else
       echo "Specified environment file $ENV_VALUES_FILE does not exist."
       ENV_VALUES_FILE=""
     fi
-  else
-    # Scan for additional YAML files and offer selection
-    # shellcheck disable=SC2207
-    # shellcheck disable=SC2010
-    yaml_files=($(ls "$DIRECTORY"/*.yaml 2>/dev/null | grep -v "values.yaml"))
-    if [ "${#yaml_files[@]}" -gt 0 ]; then
-      echo "Found additional YAML files:"
-      options=("${yaml_files[@]##*/}" "Skip")
-      for i in "${!options[@]}"; do
-        echo "$((i + 1))) ${options[$i]}"
-      done
+  fi
 
-      # shellcheck disable=SC2162
-      read -p "Choose an environment file [default: Skip]: " choice
-      choice=${choice:-$((${#options[@]}))} # Default to the last option (Skip) if no choice is made
+  # Scan for additional YAML files and offer selection if ENV_FILE_NAME not set
+  yaml_files=($(ls "$DIRECTORY"/*.yaml 2>/dev/null | grep -v "values.yaml"))
+  if [ "${#yaml_files[@]}" -gt 0 ]; then
+    echo "Found additional YAML files:"
+    options=("${yaml_files[@]##*/}" "Skip")
+    for i in "${!options[@]}"; do
+      echo "$((i + 1))) ${options[$i]}"
+    done
 
-      if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -le "${#options[@]}" ] && [ "$choice" -gt 0 ]; then
-        env_file="${options[$((choice - 1))]}"
-        if [ "$env_file" == "Skip" ]; then
-          ENV_VALUES_FILE=""
-          echo "Skipping additional environment-specific values file."
-        else
-          ENV_VALUES_FILE="$DIRECTORY/$env_file"
-          echo "Using selected environment-specific values file: $ENV_VALUES_FILE"
-        fi
-      else
-        echo "Invalid selection. Skipping additional environment-specific values file."
+    read -p "Choose an environment file [default: Skip]: " choice
+    choice=${choice:-$((${#options[@]}))} # Default to the last option (Skip) if no choice is made
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -le "${#options[@]}" ] && [ "$choice" -gt 0 ]; then
+      env_file="${options[$((choice - 1))]}"
+      if [ "$env_file" == "Skip" ]; then
         ENV_VALUES_FILE=""
+        echo "Skipping additional environment-specific values file."
+      else
+        ENV_VALUES_FILE="$DIRECTORY/$env_file"
+        echo "Using selected environment-specific values file: $ENV_VALUES_FILE"
       fi
     else
-      echo "No additional environment-specific values file found."
+      echo "Invalid selection. Skipping additional environment-specific values file."
       ENV_VALUES_FILE=""
     fi
+  else
+    echo "No additional environment-specific values file found."
+    ENV_VALUES_FILE=""
   fi
 }
 
@@ -183,7 +194,6 @@ set_kubeconfig() {
   echo "2. Select from $HOME/.kube directory"
   echo "3. Specify a custom KUBECONFIG path"
 
-  # shellcheck disable=SC2162
   read -p "Enter option number [1-3]: " kubeconfig_option
   kubeconfig_option=${kubeconfig_option:-1} # Default to option 1
 
@@ -195,16 +205,24 @@ set_kubeconfig() {
   2)
     echo "Available KUBECONFIG files in $HOME/.kube:"
     select kube_file in $HOME/.kube/*; do
-      export KUBECONFIG="$kube_file"
-      echo "Using selected KUBECONFIG: $KUBECONFIG"
-      break
+      if [ -f "$kube_file" ]; then
+        export KUBECONFIG="$kube_file"
+        echo "Using selected KUBECONFIG: $KUBECONFIG"
+        break
+      else
+        echo "Invalid selection, please choose a valid file."
+      fi
     done
     ;;
   3)
-    # shellcheck disable=SC2162
     read -p "Enter custom KUBECONFIG path: " custom_kubeconfig
-    export KUBECONFIG="$custom_kubeconfig"
-    echo "Using custom KUBECONFIG: $KUBECONFIG"
+    if [ -f "$custom_kubeconfig" ]; then
+      export KUBECONFIG="$custom_kubeconfig"
+      echo "Using custom KUBECONFIG: $KUBECONFIG"
+    else
+      echo "Invalid file path. Using default KUBECONFIG."
+      export KUBECONFIG="$HOME/.kube/config"
+    fi
     ;;
   *)
     echo "Invalid option. Using default KUBECONFIG."
@@ -232,7 +250,7 @@ release_exists() {
 # Function to extract image tag from existing release
 get_image_tag() {
   if release_exists; then
-    echo "Extracting image tag from existing release..."
+    echo "Extracting image tag from existing release for $RELEASE_NAME..."
     values=$(helm get values "$RELEASE_NAME" -n "$NAMESPACE" -a)
     image_tag=$(echo "$values" | yq eval '.image.tag' -)
     echo "Current image tag: $image_tag"
@@ -255,10 +273,9 @@ deploy_image_tag() {
 
     echo "Existing release found. Upgrading with new image tag."
     previous_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" --max 1 | awk 'NR==2{print $1}')
-    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" "$CHART_VERSION_FLAG" -n "$NAMESPACE" --set image.tag="$IMAGE_TAG" --reuse-values
+    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $CHART_VERSION_FLAG --set image.tag="$IMAGE_TAG" --reuse-values
 
     # Check if the deployment succeeded
-    # shellcheck disable=SC2181
     if [ $? -ne 0 ]; then
       echo "Upgrade failed. Rolling back to revision $previous_revision."
       helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
@@ -379,7 +396,6 @@ perform_directory_operation() {
     echo "2. apply"
     echo "3. sync"
 
-    # shellcheck disable=SC2162
     read -p "Enter action number [1-3]: " operation
     operation=${operation:-1} # Default to option 1
 
@@ -425,23 +441,23 @@ perform_operation() {
   diff)
     echo "Performing diff operation..."
     if release_exists; then
-      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG" --context 2
+      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG --context 2
     else
       echo "Release does not exist. Diff shows entire contents as new."
-      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased "$VALUES_FLAGS" "$CHART_VERSION_FLAG" --context 2
+      helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased $VALUES_FLAGS $CHART_VERSION_FLAG --context 2
     fi
     ;;
   apply)
     echo "Performing apply operation..."
     if release_exists; then
-      helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG"
+      helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
     else
-      helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG"
+      helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
     fi
     ;;
   sync)
     echo "Performing sync operation..."
-    helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" "$VALUES_FLAGS" "$CHART_VERSION_FLAG"
+    helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
     ;;
   *)
     echo "Invalid operation. Choose 'diff', 'apply', or 'sync'."
