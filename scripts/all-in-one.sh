@@ -61,7 +61,9 @@ parse_args() {
       shift
       ;;
     -k | --kubeconfig)
-      set_kubeconfig
+      if [ -z "$KUBECONFIG" ]; then
+        set_kubeconfig
+      fi
       ;;
     -e | --env-file)
       ENV_FILE_NAME="$2"
