@@ -24,7 +24,7 @@ show_help() {
   echo "  -a, --all             Iterate over all subdirectories as separate releases."
   echo "  -n, --namespace       Specify the Kubernetes namespace."
   echo "  -r, --release         Specify the release name."
-  echo "  -o, --operation       Specify the operation (diff, apply, sync)."
+  echo "  -o, --operation       Specify the operation (diff, upgrade)."
   echo "  -k, --kubeconfig      Set the KUBECONFIG to use."
   echo "  -e, --env-file        Specify the environment-specific values file."
   echo "  -t, --image-tag       Specify the image tag to use."
@@ -33,7 +33,7 @@ show_help() {
   echo ""
   echo "Examples:"
   echo "  $0 -n mynamespace -r myrelease -t newtag"
-  echo "  $0 -d mycharts/ -o apply"
+  echo "  $0 -d mycharts/ -o upgrade"
   exit 0
 }
 
@@ -395,26 +395,24 @@ perform_directory_operation() {
   if [ -z "$OPERATION" ]; then
     echo "Select operation (default: 1):"
     echo "1. diff"
-    echo "2. apply"
-    echo "3. sync"
+    echo "2. upgrade"
 
-    read -p "Enter action number [1-3]: " operation
+    read -p "Enter action number [1-2]: " operation
     operation=${operation:-1} # Default to option 1
 
     case $operation in
     1) OPERATION="diff" ;;
-    2) OPERATION="apply" ;;
-    3) OPERATION="sync" ;;
+    2) OPERATION="upgrade" ;;
     *) echo "Invalid operation" ;;
     esac
   fi
 
-  if [[ "$OPERATION" =~ ^(diff|apply|sync)$ ]]; then
+  if [[ "$OPERATION" =~ ^(diff|upgrade)$ ]]; then
     echo "Using operation: $OPERATION"
     get_image_tag
     perform_operation "$OPERATION"
   else
-    echo "Invalid operation: $OPERATION. Choose 'diff', 'apply', or 'sync'."
+    echo "Invalid operation: $OPERATION. Choose 'diff' or 'upgrade'."
   fi
 }
 
@@ -449,20 +447,37 @@ perform_operation() {
       helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" --allow-unreleased $VALUES_FLAGS $CHART_VERSION_FLAG --context 2
     fi
     ;;
-  apply)
-    echo "Performing apply operation..."
+  upgrade)
+    echo "Performing upgrade operation..."
     if release_exists; then
-      helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
+      echo "Release exists. Upgrading..."
+
+      # Check if there are changes with diff
+      echo "Checking for changes with diff..."
+
+      # Run the diff and capture the output
+      DIFF_OUTPUT=$(helm diff upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG --context 2)
+
+      # Check if there are no changes
+      if [ -z "$DIFF_OUTPUT" ]; then
+        echo "No changes detected, skipping upgrade."
+      else
+        echo "Changes detected, proceeding with upgrade..."
+
+        # Output the detected changes
+        echo "The following changes will be applied:"
+        echo -e "$DIFF_OUTPUT"
+
+        # Perform the upgrade
+#        helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
+      fi
     else
+      echo "Release does not exist. Installing..."
       helm install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
     fi
     ;;
-  sync)
-    echo "Performing sync operation..."
-    helm upgrade --install "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
-    ;;
   *)
-    echo "Invalid operation. Choose 'diff', 'apply', or 'sync'."
+    echo "Invalid operation. Choose 'diff', 'upgrade'."
     exit 1
     ;;
   esac
