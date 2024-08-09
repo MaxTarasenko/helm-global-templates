@@ -15,6 +15,8 @@ ENV_FILE_NAME=${ENV_FILE_NAME:-""}
 IMAGE_TAG=""
 RELEASE_NAME=${RELEASE_NAME:-""}
 
+export FORCE_COLOR=1
+
 # Function to display help message
 show_help() {
   echo "Usage: $0 [options]"
@@ -469,7 +471,7 @@ perform_operation() {
         echo -e "$DIFF_OUTPUT"
 
         # Perform the upgrade
-#        helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
+        helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $VALUES_FLAGS $CHART_VERSION_FLAG
       fi
     else
       echo "Release does not exist. Installing..."
