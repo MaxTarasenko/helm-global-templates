@@ -1,5 +1,10 @@
 #!/bin/bash
 
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+RESET=$(tput sgr0)
+
 # Default Variables
 REPO_NAME="helm-global-templates"
 REPO_URL="https://maxtarasenko.github.io/helm-global-templates"
@@ -14,8 +19,18 @@ ALL_DIRECTORIES=false
 ENV_FILE_NAME=${ENV_FILE_NAME:-""}
 IMAGE_TAG=""
 RELEASE_NAME=${RELEASE_NAME:-""}
+EXCLUDE_RELEASES=${EXCLUDE_RELEASES:-""}
 
-export FORCE_COLOR=1
+check_dependencies() {
+    for cmd in helm kubectl yq; do
+        if ! command -v $cmd &> /dev/null; then
+            echo "${RED}Error: $cmd is not installed.${RESET}"
+            exit 1
+        fi
+    done
+}
+
+check_dependencies
 
 # Function to display help message
 show_help() {
@@ -37,6 +52,12 @@ show_help() {
   echo "  $0 -n mynamespace -r myrelease -t newtag"
   echo "  $0 -d mycharts/ -o upgrade"
   exit 0
+}
+
+add_separator() {
+    echo ""
+    echo "--- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---"
+    echo ""
 }
 
 # Function to parse command-line arguments
@@ -82,6 +103,10 @@ parse_args() {
     -h | --help)
       show_help
       ;;
+    -x | --exclude)
+      EXCLUDE_RELEASES="$2"
+      shift
+      ;;
     *)
       echo "Unknown parameter: $1"
       exit 1
@@ -104,6 +129,7 @@ select_base_directory() {
     DIRECTORY="${DIRECTORY%/}" # Ensure no trailing slash
     echo "Using specified base directory: $DIRECTORY"
   fi
+  add_separator
 }
 
 # Function to check and select a subdirectory with values.yaml
@@ -119,6 +145,7 @@ select_subdirectory() {
       fi
       echo "values.yaml not found in selected subdirectory."
     done
+    add_separator
   done
 }
 
@@ -145,6 +172,7 @@ iterate_subdirectories() {
 
     select_env_values_file
     perform_directory_operation
+    add_separator
   done
 }
 
@@ -189,6 +217,8 @@ select_env_values_file() {
     echo "No additional environment-specific values file found."
     ENV_VALUES_FILE=""
   fi
+
+  add_separator
 }
 
 # Function to set KUBECONFIG
@@ -197,6 +227,8 @@ set_kubeconfig() {
   echo "1. Default KUBECONFIG ($HOME/.kube/config)"
   echo "2. Select from $HOME/.kube directory"
   echo "3. Specify a custom KUBECONFIG path"
+
+  add_separator
 
   read -p "Enter option number [1-3]: " kubeconfig_option
   kubeconfig_option=${kubeconfig_option:-1} # Default to option 1
@@ -233,6 +265,8 @@ set_kubeconfig() {
     export KUBECONFIG="$HOME/.kube/config"
     ;;
   esac
+
+  add_separator
 }
 
 # Function to add Helm repo if not already added
@@ -391,7 +425,8 @@ perform_directory_operation() {
   echo "Release name: $RELEASE_NAME"
   echo "Using standard values file: $STANDARD_VALUES_FILE"
   echo "Using environment-specific values file: ${ENV_VALUES_FILE:-None}"
-  echo ""
+
+  add_separator
 
   # Determine operation
   if [ -z "$OPERATION" ]; then
@@ -488,7 +523,7 @@ perform_operation() {
 # Main script execution
 parse_args "$@"
 add_helm_repo
-echo ""
+add_separator
 
 # Check if IMAGE_TAG is provided for updating
 if [ -n "$IMAGE_TAG" ]; then
@@ -505,9 +540,25 @@ else
     RELEASE_NAME="${DIRECTORY##*/}" # Use specified directory as release name
     STANDARD_VALUES_FILE="$DIRECTORY/values.yaml"
 
+    # Use the environment file if ENV_FILE_NAME is set
+    if [ -n "$ENV_FILE_NAME" ]; then
+      ENV_VALUES_FILE="$DIRECTORY/$ENV_FILE_NAME.yaml"
+      if [ ! -f "$ENV_VALUES_FILE" ]; then
+        echo "Specified environment file $ENV_VALUES_FILE does not exist for subdirectory $subdir."
+        ENV_VALUES_FILE=""
+      fi
+    else
+      ENV_VALUES_FILE=""
+    fi
+
     # Set the ENV_VALUES_FILE to user-specified or default to directory env.yaml
     select_env_values_file
 
     perform_directory_operation
   fi
 fi
+
+# ToDo - output color of echo
+# ToDo - gaps between releases
+# ToDo - when updating all releases, add a function to exclude some releases
+# ToDo - connect few more additional values (option)
