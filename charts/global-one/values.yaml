@@ -144,9 +144,16 @@ healthCheck:
 
 service:
   type: ClusterIP
+  networkPolicy:
+    useDefaultPolicy: true
   ports:
     - name: http
       port: 80
+#      networkPolicy:
+#        enabled: true
+#        ipList:
+#          - 1.1.1.1 # /32 Default prefix
+#          - 192.168.0.0/16 # or set self mask
   headless:
     enable: false
 
