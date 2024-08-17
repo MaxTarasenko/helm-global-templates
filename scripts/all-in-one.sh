@@ -5,6 +5,14 @@ GREEN=$(tput setaf 2)
 YELLOW=$(tput setaf 3)
 RESET=$(tput sgr0)
 
+# check_dependencies
+for cmd in helm kubectl yq; do
+    if ! command -v $cmd &> /dev/null; then
+        echo "${RED}Error: $cmd is not installed.${RESET}"
+        exit 1
+    fi
+done
+
 # Default Variables
 REPO_NAME="helm-global-templates"
 REPO_URL="https://maxtarasenko.github.io/helm-global-templates"
@@ -21,16 +29,13 @@ IMAGE_TAG=""
 RELEASE_NAME=${RELEASE_NAME:-""}
 EXCLUDE_RELEASES=${EXCLUDE_RELEASES:-""}
 
-check_dependencies() {
-    for cmd in helm kubectl yq; do
-        if ! command -v $cmd &> /dev/null; then
-            echo "${RED}Error: $cmd is not installed.${RESET}"
-            exit 1
-        fi
-    done
-}
-
-check_dependencies
+# check_dependencies
+for cmd in helm kubectl yq; do
+    if ! command -v $cmd &> /dev/null; then
+        echo "${RED}Error: $cmd is not installed.${RESET}"
+        exit 1
+    fi
+done
 
 # Function to display help message
 show_help() {
@@ -562,3 +567,4 @@ fi
 # ToDo - gaps between releases
 # ToDo - when updating all releases, add a function to exclude some releases
 # ToDo - connect few more additional values (option)
+# ToDo - added option for upgrade with rollback

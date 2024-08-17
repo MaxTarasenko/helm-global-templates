@@ -3,6 +3,16 @@ entries:
   global-one:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2024-08-17T10:44:25.802961+03:00"
+    description: A Helm chart for Kubernetes
+    digest: c336251c0feb1e4fed54ea5894a56b7411026830f01dc88c16b258f0dbedc6e1
+    name: global-one
+    type: application
+    urls:
+    - https://github.com/MaxTarasenko/helm-global-templates/releases/download/v0.1.8/global-one-0.1.8.tgz
+    version: 0.1.8
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2024-08-01T22:05:48.64636+03:00"
     description: A Helm chart for Kubernetes
     digest: beeab1c8a9f23b457950c5d3e0b9f542d599adc81888170d845307b99a6a7b53
@@ -11,4 +21,4 @@ entries:
     urls:
     - https://github.com/MaxTarasenko/helm-global-templates/releases/download/v0.1.7/global-one-0.1.7.tgz
     version: 0.1.7
-generated: "2024-08-01T22:05:48.645131+03:00"
+generated: "2024-08-17T10:44:25.802455+03:00"
