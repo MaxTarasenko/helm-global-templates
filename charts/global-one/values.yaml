@@ -3,12 +3,44 @@
 # Declare variables to be passed into your templates.
 
 configMap: []
-#  - name: configmap1
-#    data: |
-#      env = dev
-#      port = 80
-#  - name: configmap2
-#    fileData: "configMap/server.conf"
+#  - name: config
+#    data:
+#      game.properties: |
+#        enemies=aliens
+#        lives=3
+#        enemies.cheat=true
+#        enemies.cheat.level=noGoodRotten
+#        secret.code.passphrase=UUDDLRLRBABAS
+#        secret.code.allowed=true
+#        secret.code.lives=30
+#      ui.properties: |
+#        color.good=purple
+#        color.bad=yellow
+#        allow.textmode=true
+#        how.nice.to.look=fairlyNice
+#
+#  - name: config-env-file
+#    data:
+#      allowed: '"true"'
+#      enemies: aliens
+#      lives: "3"
+#
+#  - name: config-3
+#    data:
+#      game-special-key: |
+#        enemies=aliens
+#        lives=3
+#        enemies.cheat=true
+#        enemies.cheat.level=noGoodRotten
+#        secret.code.passphrase=UUDDLRLRBABAS
+#        secret.code.allowed=true
+#        secret.code.lives=30
+#
+#  - name: config-4
+#    data:
+#      "config.yml": |
+#        web:
+#          request_logging: false
 
 replicaCount: 1
 

@@ -5,13 +5,9 @@ kind: ConfigMap
 metadata:
   name: {{ .name }}
 data:
-{{- range $key, $value := .data }}
-  {{ $key }}: {{ $value | quote }}
-{{- end }}
-{{- range $key, $path := .fileData }}
+  {{- range $key, $value := .data }}
   {{ $key }}: |
-{{- $file := .Files.Get $path | nindent 4 }}
-{{ $file }}
-{{- end }}
+{{ $value | nindent 4 }}
+  {{- end }}
 {{- end }}
 {{- end }}
