@@ -1,6 +1,6 @@
-{{- $useDefaultPolicy := index .Values.service.networkPolicy.useDefaultPolicy }}
+{{- $useDefaultPolicy := .Values.service.useDefaultPolicy }}
 {{- range $index, $port := .Values.service.ports }}
-{{- if $port.networkPolicy.enabled }}
+{{- if $port.networkPolicy }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -25,7 +25,7 @@ spec:
     - from:
         {{- range $ip := $port.networkPolicy.ipList }}
         - ipBlock:
-            cidr: {{ $ip }}
+            cidr: {{ if not (regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$" $ip) }}{{ $ip }}/32{{ else }}{{ $ip }}{{ end }}
         {{- end }}
       ports:
         - port: {{ $port.port }}

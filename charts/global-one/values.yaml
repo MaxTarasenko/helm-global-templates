@@ -144,13 +144,12 @@ healthCheck:
 
 service:
   type: ClusterIP
-  networkPolicy:
-    useDefaultPolicy: true
+  useDefaultPolicy: true # Use default policy for allow allow for podSelector/namespaceSelector
   ports:
     - name: http
       port: 80
+      # For enable NetworkPolicy and create
 #      networkPolicy:
-#        enabled: true
 #        ipList:
 #          - 1.1.1.1 # /32 Default prefix
 #          - 192.168.0.0/16 # or set self mask
