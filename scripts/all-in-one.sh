@@ -316,10 +316,16 @@ deploy_image_tag() {
 
     echo "Existing release found. Upgrading with new image tag."
     previous_revision=$(helm history "$RELEASE_NAME" -n "$NAMESPACE" --max 1 | awk 'NR==2{print $1}')
-    helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $CHART_VERSION_FLAG --set image.tag="$IMAGE_TAG" --reuse-values
+    output=$(helm upgrade "$RELEASE_NAME" "$REPO_NAME/$CHART_NAME" -n "$NAMESPACE" $CHART_VERSION_FLAG --set image.tag="$IMAGE_TAG" --reuse-values 2>&1)
 
-    # Check if the deployment succeeded
-    if [ $? -ne 0 ]; then
+    # Check if the upgrade failed
+    if echo "$output" | grep -q "has no deployed releases"; then
+      echo "Error: Release not found"
+      exit 1 # Exit with error
+    elif echo "$output" | grep -q "Error: UPGRADE FAILED: template"; then
+      echo "Error: Check your configuration"
+      exit 1 # Exit with error
+    elif [ $? -ne 0 ]; then
       echo "Upgrade failed. Rolling back to revision $previous_revision."
       helm rollback "$RELEASE_NAME" "$previous_revision" -n "$NAMESPACE"
       return
