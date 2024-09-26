@@ -63,8 +63,6 @@ Common labels
 */}}
 {{- define "global-one.labels" -}}
 helm.sh/chart: {{ include "global-one.chart" . }}
-app: {{ .Release.Name }}
-version: {{ .Chart.Version | quote }}
 {{ include "global-one.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -78,6 +76,8 @@ Selector labels
 {{- define "global-one.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "global-one.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app: {{ .Release.Name }}
+version: {{ .Chart.Version | quote }}
 {{- end }}
 
 {{/*

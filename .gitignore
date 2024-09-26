@@ -1,3 +1,4 @@
 .idea
 .env
 *.tgz
+.DS_Store
