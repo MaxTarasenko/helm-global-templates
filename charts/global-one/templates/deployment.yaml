@@ -82,6 +82,7 @@ spec:
 
       containers:
 
+      # TODO: Fix support for multiple containers
       # Multiple containers or single container
       {{- if .Values.containers }}
       {{- range .Values.containers }}
@@ -111,7 +112,7 @@ spec:
 
           {{ end }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           image: {{ include "global-one.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.command }}

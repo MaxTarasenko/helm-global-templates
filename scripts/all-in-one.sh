@@ -303,6 +303,7 @@ get_image_tag() {
   fi
 }
 
+# TODO - fix error handling
 # Function for simple image tag deployment with rollback
 deploy_image_tag() {
   echo "Deploying image tag $IMAGE_TAG to release $RELEASE_NAME in namespace $NAMESPACE"
