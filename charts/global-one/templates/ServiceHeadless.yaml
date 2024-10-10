@@ -1,0 +1,22 @@
+{{- $fullname := include "global-one.fullname" . -}}
+{{- $labels := include "global-one.labels" . -}}
+{{- $selectorLabels := include "global-one.selectorLabels" . -}}
+{{- range .Values.service }}
+{{- if .headless }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-headless
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    - port: {{ .port }}
+      targetPort: {{ .name }}
+      protocol: {{ default "TCP" .protocol }}
+      name: {{ .name }}
+  selector:
+    {{- $selectorLabels | nindent 4 }}
+{{- end }}
+{{- end }}

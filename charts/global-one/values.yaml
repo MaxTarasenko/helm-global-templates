@@ -174,41 +174,44 @@ healthCheck:
   path: /
   port: http
 
+## Service and Ingress for service
 service:
-  type: ClusterIP
-  useDefaultPolicy: true # Use default policy for allow allow for podSelector/namespaceSelector
-  ports:
-    - name: http
-      port: 80
-      # For enable NetworkPolicy and create
-#      networkPolicy:
-#        ipList:
-#          - 1.1.1.1 # /32 Default prefix
-#          - 192.168.0.0/16 # or set self mask
-  headless:
-    enable: false
+  - name: http
+    port: 80
+#    type: NodePort # Default
+#    nodePort: 3000 # Default disable and random create
+#    protocol: TCP # Default
+## For enable headless service without ip for service
+#    headless: true
+## For enable ingress and create
+#    ingress:
+#      enabled: true # Default false
+#      className: "" # Default
+#      host: example.com # Default | only single
+#      hosts: [] # Default for multi or single host | overwrite host
+#        - example1.com # Example
+#        - example2.com # Example
+#      path: / # Default
+#      pathType: ImplementationSpecific # Default
+#      annotations: {} # Default
+#      tls: true # Default
+## For enable NetworkPolicy and create
+#    networkPolicy:
+#      enabled: true # Default false
+#      useDefaultPolicy: true # Default true, allows access only from the current namespace
+#      allowFromAllNamespaces: false # Default false, allows you to control access permission from all namespaces# policyTypes: [“Ingress”, “Egress”] # Default [“Ingress”].
+#      ingressAllowAllPods: false # Allow all pods ingress
+#      egressAllowAllPods: false # Allow all pods egress
+#      ipList:
+#        - 1.1.1.1 # /32 Default prefix
+#        - 192.168.0.0/16 # or set self mask
 
-ingress:
-  enabled: false
-#  portIndex: 0  # port index in the `service.ports` list, which will be used for ingress
-  className: ""
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/ingress.class: addon-http-application-routing # Azure ingress
-    # kubernetes.io/tls-acme: "true"
-    # nginx.ingress.kubernetes.io/rewrite-target: /
-    # or nginx.ingress.kubernetes.io/rewrite-target: /$2
-  hosts: []
-#    - host: chart-example.local
-#      paths:
-#        - path: /
-#     or - path: /service/(/|$)(.*)
-#          pathType: ImplementationSpecific
-#          port: 6001
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+## For enable NetworkPolicy and create
+#    networkPolicy:
+#      useDefaultPolicy: false # Use default policy for allow allow for podSelector/namespaceSelector
+#      ipList:
+#        - 1.1.1.1 # /32 Default prefix
+#        - 192.168.0.0/16 # or set self mask
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -269,9 +272,6 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
-
-nameOverride: ""
-fullnameOverride: ""
 
 # --------------------------- CronJob ------------------------
 cronjobs:

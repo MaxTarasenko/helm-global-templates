@@ -1,0 +1,65 @@
+{{- $fullName := include "global-one.fullname" . -}}
+{{- $labels := include "global-one.labels" . -}}
+{{- range .Values.service }}
+{{- if .ingress -}}
+{{- if .ingress.enabled -}}
+{{- $path := .ingress.path | default "/" -}}
+{{- $pathType := .ingress.pathType | default "ImplementationSpecific" -}}
+{{- $port := .port -}}
+{{- $hosts := .ingress.hosts | default (list) -}}
+{{- $singleHost := .ingress.host | default "global-one.local" -}}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-{{ .name }}
+  labels:
+    {{- $labels | nindent 4 }}
+  {{- with .ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and .ingress.tls (or (gt (len $hosts) 0) (ne $singleHost "global-one.local")) }}
+  tls:
+    {{- if gt (len $hosts) 0 }}
+    {{- range $hosts }}
+    - hosts:
+        - {{ . }}
+      secretName: {{ printf "%s-tls" . }}
+    {{- end }}
+    {{- else }}
+    - hosts:
+        - {{ $singleHost }}
+      secretName: {{ printf "%s-tls" $singleHost }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- if gt (len $hosts) 0 }}
+    {{- range $hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $path }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $port }}
+    {{- end }}
+    {{- else }}
+    - host: {{ $singleHost | quote }}
+      http:
+        paths:
+          - path: {{ $path }}
+            pathType: {{ $pathType }}
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $port }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

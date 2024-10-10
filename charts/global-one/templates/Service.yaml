@@ -1,0 +1,24 @@
+{{- $fullname := include "global-one.fullname" . -}}
+{{- $labels := include "global-one.labels" . -}}
+{{- $selectorLabels := include "global-one.selectorLabels" . -}}
+{{- range .Values.service }}
+{{- $type := default "ClusterIP" .type }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  type: {{ $type }}
+  ports:
+    - port: {{ .port }}
+      targetPort: {{ .name }}
+      {{- if and (or (eq $type "LoadBalancer") (eq $type "NodePort")) .nodePort }}
+      nodePort: {{ .nodePort }}
+      {{- end }}
+      protocol: {{ default "TCP" .protocol }}
+      name: {{ .name }}
+  selector:
+    {{- $selectorLabels | nindent 4 }}
+{{- end }}

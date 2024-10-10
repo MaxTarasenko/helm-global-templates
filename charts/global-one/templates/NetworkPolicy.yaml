@@ -1,0 +1,68 @@
+{{- range .Values.service }}
+{{- if .networkPolicy.enabled }}
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "global-one.fullname" $ }}-{{ .name }}
+  labels:
+    app.kubernetes.io/name: {{ include "global-one.name" $ }}
+    app.kubernetes.io/instance: {{ include "global-one.fullname" $ }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "global-one.name" $ }}
+      app.kubernetes.io/instance: {{ include "global-one.fullname" $ }}
+  policyTypes:
+    {{- if .networkPolicy.policyTypes }}
+    {{- range .networkPolicy.policyTypes }}
+    - {{ . }}
+    {{- end }}
+    {{- else }}
+    - Ingress
+    {{- end }}
+
+  ingress:
+    - from:
+        {{- if .networkPolicy.allowFromAllNamespaces }}
+        - namespaceSelector: {}
+          podSelector: {}
+        {{- else }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $.Release.Namespace }}
+        {{- end }}
+          podSelector: {}
+      ports:
+        - port: {{ .port }}
+          protocol: {{ .protocol | default "TCP" }}
+
+    {{- if .networkPolicy.ipList }}
+    {{- range $ip := .networkPolicy.ipList }}
+    - from:
+        - ipBlock:
+            cidr: {{ if not (regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$" $ip) }}{{ $ip }}/32{{ else }}{{ $ip }}{{ end }}
+      ports:
+        - port: {{ .port }}
+          protocol: {{ .protocol | default "TCP" }}
+    {{- end }}
+    {{- end }}
+
+  {{- if or .networkPolicy.egressAllowAllPods .networkPolicy.useDefaultPolicy }}
+  egress:
+    - to:
+        {{- if .networkPolicy.egressAllowAllPods }}
+        - podSelector: {}
+          namespaceSelector: {}
+        {{- else }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ $.Release.Namespace }}
+        {{- end }}
+      ports:
+        - port: {{ .port }}
+          protocol: {{ .protocol | default "TCP" }}
+  {{- end }}
+
+{{- end }}
+{{- end }}

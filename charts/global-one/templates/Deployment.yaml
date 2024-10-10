@@ -81,30 +81,6 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
 
       containers:
-
-      # TODO: Fix support for multiple containers
-      # Multiple containers or single container
-      {{- if .Values.containers }}
-      {{- range .Values.containers }}
-        - name: {{ .name }}
-          image: "{{ .image.repository }}/{{ .image.name }}:{{ .image.tag }}"
-          imagePullPolicy: {{ .image.pullPolicy }}
-          {{- if .command }}
-          command:
-            {{- toYaml .command | nindent 12 }}
-          {{- end }}
-          {{- if .args }}
-          args:
-            {{- toYaml .args | nindent 12 }}
-          {{- end }}
-          {{- if .env }}
-          env:
-            {{- include "global-one.env" . | nindent 12 }}
-          {{- end }}
-      {{- end }}
-
-      # Single container
-      {{- else }}
         - name: {{ include "global-one.fullname" . }}
           {{ if .Values.lifecycle }}
           lifecycle:
@@ -132,10 +108,8 @@ spec:
           volumeMounts:
             {{ toYaml .Values.volumeMounts | nindent 12 }}
           {{- end }}
-
-      {{- end }}
           ports:
-            {{- range .Values.service.ports }}
+            {{- range .Values.service }}
             - name: {{ .name }}
               containerPort: {{ .port }}
               {{ if .protocol }}

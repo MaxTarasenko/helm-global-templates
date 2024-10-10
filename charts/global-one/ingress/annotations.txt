@@ -1,0 +1,3 @@
+kubernetes.io/ingress.class: addon-http-application-routing # Azure ingress
+cert-manager.io/cluster-issuer: letsencrypt # Enabling certificate creation via certbot
+nginx.ingress.kubernetes.io/rewrite-target: /$2 # Rewrite with path: /auth-service(/|$)(.*)
