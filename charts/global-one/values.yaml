@@ -112,7 +112,7 @@ containers: []
 #          name: "default-secrets"
 #          key: "default-password"
 
-# For init container
+## For init container
 initContainers: []
 #  - name: my-init-container
 #    image:
@@ -129,19 +129,28 @@ initContainers: []
 #          name: "init-default-secrets"
 #          key: "init-default-password"
 
-# Connect volumes in the pod (example)
-connectVolume: []
+## Connect volumes in the Deployment
+#connectVolume: [] # Default
+## Create PVC
 #  - name: dockovpn-data
 #    persistentVolumeClaim:
 #      claimName: dockovpn-data
+#      storageClassName: "" # Default
+#      size: "1Gi" # Default
+#      annotations: {} # Default
+#      accessModes: "" # Default 'ReadWriteOnce'
+#      selector: {} # Default
+#        matchLabels: {} # Default
+## Connect 'secret'
 #  - name: gateway-private-key
 #    secret:
 #      secretName: gateway-private-key
+## Connect 'configMap'
 #  - name: dockovpn-config
 #    configMap:
 #      name: dockovpn-config
 
-# Mounts volumes to container when one container
+## Mounts volumes to container when one container
 volumeMounts: []
 #  - name: gateway-private-key
 #    mountPath: /keys/private.key

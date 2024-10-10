@@ -1,8 +1,7 @@
 {{- $labels := include "global-one.labels" . -}}
 
-{{- if .Values.connectVolume }}
 {{- range .Values.connectVolume }}
-  {{- if .persistentVolumeClaim }}
+{{- if .persistentVolumeClaim }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -37,5 +36,4 @@ spec:
       {{- end }}
   {{- end }}
   {{- end }}
-{{- end }}
 {{- end }}
