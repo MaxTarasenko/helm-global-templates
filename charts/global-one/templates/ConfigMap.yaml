@@ -1,13 +1,34 @@
+{{- $fullname := include "global-one.fullname" . -}}
+{{- $labels := include "global-one.labels" . -}}
 {{- if .Values.configMap }}
 {{- range .Values.configMap }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .name }}
+  name: {{ $fullname }}-{{ .name }}
+  labels:
+    {{- $labels | nindent 4 }}
 data:
-  {{- range $key, $value := .data }}
-  {{ $key }}: |
-{{ $value | nindent 4 }}
+  {{- if .dataFiles }}
+    {{- range $file := .dataFiles }}
+  {{ (base $file) }}: |
+{{ $.Files.Get $file | indent 4 }}
+    {{- end }}
   {{- end }}
+
+  {{- if .dataInline }}
+    {{- range $key, $value := .dataInline }}
+  {{ $key }}: "{{ $value }}"
+    {{- end }}
+  {{- end }}
+
+  {{- if .data }}
+    {{- range $key, $value := .data }}
+  {{ $key }}: |-
+{{ trim $value | nindent 4 }}
+    {{- end }}
+  {{- end }}
+
 {{- end }}
 {{- end }}

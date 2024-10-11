@@ -2,7 +2,89 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-configMap: []
+# BEGIN--------------------------- Standard config ------------------------
+image:
+  repository:
+  env:
+  name: nginx
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+## If you need ENV Variables
+env: {}
+  #  # Set with simple value
+  #  DB_HOST: "host"
+  #  # Set with secret
+  #  DB_PASS:
+  #    secret:
+  #      name: "db-secrets"
+  #      key: "password"
+  #  # Set url to service with cluster local
+  #  SERVICE_URL: # http://{{.service_url.name}}.{{$.Release.Namespace}}.svc.cluster.local.:{{.service_url.port}}
+  #    service_url:
+  #      name: "auth"
+  #      port: "8080"
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: "25%"
+    maxUnavailable: "25%"
+
+replicaCount: 1
+
+healthCheck:
+  livenessProbe:
+    enable: false
+    initialDelaySeconds: 90
+    periodSeconds: 20
+    timeoutSeconds: 10
+    failureThreshold: 5
+  readinessProbe:
+    enable: false
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 10
+    failureThreshold: 5
+  path: /
+  port: http
+# END--------------------------- Standard config ------------------------
+
+# ---
+
+# BEGIN--------------------------- ConfigMap ------------------------
+#configMap: [] # Default
+## Loads the contents of the files (config1.txt, config2.txt) and outputs them to ConfigMap.
+#  - name: config-with-file
+#    dataFiles:
+#      - "files/config1.txt"
+#      - "files/config2.txt"
+## For static value keys
+#  - name: config-with-inline
+#    dataInline:
+#      allowed: "true"
+#      enemies: "aliens"
+#      lives: "3"
+## For complex multi-line data
+#  - name: config-with-custom
+#    data:
+#      game.properties: |
+#        enemies=aliens
+#        lives=3
+#        enemies.cheat=true
+#        enemies.cheat.level=noGoodRotten
+#        secret.code.passphrase=UUDDLRLRBABAS
+#        secret.code.allowed=true
+#        secret.code.lives=30
+#      ui.properties: |
+#        color.good=purple
+#        color.bad=yellow
+#        allow.textmode=true
+#        how.nice.to.look=fairlyNice
+# END--------------------------- ConfigMap ------------------------
+
+#configMap: [] # Default
 #  - name: config
 #    data:
 #      game.properties: |
@@ -42,39 +124,8 @@ configMap: []
 #        web:
 #          request_logging: false
 
-replicaCount: 1
-
-strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxSurge: "25%"
-    maxUnavailable: "25%"
-
-image:
-  repository:
-  env:
-  name: nginx
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
-
 #command: ["python", "-m"]
 #args: ["my-app", "--arg1", "value1"]
-
-# If you need one container
-env: {}
-#  # Set with simple value
-#  DB_HOST: "host"
-#  # Set with secret
-#  DB_PASS:
-#    secret:
-#      name: "db-secrets"
-#      key: "password"
-#  # Set url to service with cluster local
-#  SERVICE_URL:
-#    service_url:
-#      name: "auth"
-#      port: "8080"
 
 
 # If you need multiple containers
@@ -166,22 +217,6 @@ lifecycle: {}
 # postStart:
 #   exec:
 #     command: ["/bin/sh","-c","/usr/sbin/nginx -s reload"]
-
-healthCheck:
-  livenessProbe:
-    enable: false
-    initialDelaySeconds: 90
-    periodSeconds: 20
-    timeoutSeconds: 10
-    failureThreshold: 5
-  readinessProbe:
-    enable: false
-    initialDelaySeconds: 30
-    periodSeconds: 20
-    timeoutSeconds: 10
-    failureThreshold: 5
-  path: /
-  port: http
 
 ## Service and Ingress for service
 service:
@@ -282,27 +317,31 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-# --------------------------- CronJob ------------------------
-cronjobs:
-  - name: cron-1
-    enabled: false
-    system: false
-    image: busybox
-    schedule: "*/5 * * * *"
-    args: [ "echo starting; echo done;" ]
-    env:
-      test1: "test"
-      test2:
-        secret:
-          name: "test"
-          key: "test"
-  - name: cron-2
-    enabled: false
-    system: true
-    schedule: "*/5 * * * *"
-    args: [ "echo starting; echo done;" ]
-    #--------Default--------
-    #nodeSelector: {}
-    #restartPolicy: OnFailure
-    #imagePullPolicy: Always
-    #ttlSecondsAfterFinished: 60
+# ---
+
+# BEGIN--------------------------- CronJob ------------------------
+#cronjobs: [] # Default
+## Example
+#  - name: cron-1
+#    enabled: false
+#    system: false
+#    image: busybox
+#    schedule: "*/5 * * * *"
+#    args: [ "echo starting; echo done;" ]
+#    env:
+#      test1: "test"
+#      test2:
+#        secret:
+#          name: "test"
+#          key: "test"
+#  - name: cron-2
+#    enabled: false
+#    system: true
+#    schedule: "*/5 * * * *"
+#    args: [ "echo starting; echo done;" ]
+## Default
+#    nodeSelector: {}
+#    restartPolicy: OnFailure
+#    imagePullPolicy: Always
+#    ttlSecondsAfterFinished: 60
+# END--------------------------- CronJob ------------------------
