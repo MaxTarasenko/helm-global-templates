@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+
+
 # BEGIN--------------------------- Standard config ------------------------
 image:
   repository:
@@ -49,13 +51,52 @@ healthCheck:
     failureThreshold: 5
   path: /
   port: http
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
 # END--------------------------- Standard config ------------------------
 
-# ---
+
+
+# BEGIN--------------------------- Service and Ingress ------------------------
+service:
+  - name: http # Default
+    port: 80
+#    type: NodePort # Default
+#    nodePort: 3000 # Default disable and random create
+#    protocol: TCP # Default
+## For enable headless service without ip for service
+#    headless: true
+## For enable ingress and create
+#    ingress:
+#      enabled: true # Default false
+#      className: "" # Default
+#      host: example.com # Default | only single
+#      hosts: [] # Default for multi or single host | overwrite host
+#        - example1.com # Example
+#        - example2.com # Example
+#      path: / # Default
+#      pathType: ImplementationSpecific # Default
+#      annotations: {} # Default
+#      tls: true # Default
+## For enable NetworkPolicy and create
+#    networkPolicy:
+#      enabled: true # Default false
+#      useDefaultPolicy: true # Default true, allows access only from the current namespace
+#      allowFromAllNamespaces: false # Default false, allows you to control access permission from all namespaces# policyTypes: [“Ingress”, “Egress”] # Default [“Ingress”].
+#      ingressAllowAllPods: false # Allow all pods ingress
+#      egressAllowAllPods: false # Allow all pods egress
+#      ipList:
+#        - 1.1.1.1 # /32 Default prefix
+#        - 192.168.0.0/16 # or set self mask
+# END--------------------------- Service and Ingress ------------------------
+
+
 
 # BEGIN--------------------------- ConfigMap ------------------------
-#configMap: [] # Default
-## Loads the contents of the files (config1.txt, config2.txt) and outputs them to ConfigMap.
+#configMap: # Default []
+## [Example] Loads the contents of the files (config1.txt, config2.txt) and outputs them to ConfigMap.
 #  - name: config-with-file
 #    dataFiles:
 #      - "files/config1.txt"
@@ -84,45 +125,6 @@ healthCheck:
 #        how.nice.to.look=fairlyNice
 # END--------------------------- ConfigMap ------------------------
 
-#configMap: [] # Default
-#  - name: config
-#    data:
-#      game.properties: |
-#        enemies=aliens
-#        lives=3
-#        enemies.cheat=true
-#        enemies.cheat.level=noGoodRotten
-#        secret.code.passphrase=UUDDLRLRBABAS
-#        secret.code.allowed=true
-#        secret.code.lives=30
-#      ui.properties: |
-#        color.good=purple
-#        color.bad=yellow
-#        allow.textmode=true
-#        how.nice.to.look=fairlyNice
-#
-#  - name: config-env-file
-#    data:
-#      allowed: '"true"'
-#      enemies: aliens
-#      lives: "3"
-#
-#  - name: config-3
-#    data:
-#      game-special-key: |
-#        enemies=aliens
-#        lives=3
-#        enemies.cheat=true
-#        enemies.cheat.level=noGoodRotten
-#        secret.code.passphrase=UUDDLRLRBABAS
-#        secret.code.allowed=true
-#        secret.code.lives=30
-#
-#  - name: config-4
-#    data:
-#      "config.yml": |
-#        web:
-#          request_logging: false
 
 #command: ["python", "-m"]
 #args: ["my-app", "--arg1", "value1"]
@@ -218,50 +220,7 @@ lifecycle: {}
 #   exec:
 #     command: ["/bin/sh","-c","/usr/sbin/nginx -s reload"]
 
-## Service and Ingress for service
-service:
-  - name: http
-    port: 80
-#    type: NodePort # Default
-#    nodePort: 3000 # Default disable and random create
-#    protocol: TCP # Default
-## For enable headless service without ip for service
-#    headless: true
-## For enable ingress and create
-#    ingress:
-#      enabled: true # Default false
-#      className: "" # Default
-#      host: example.com # Default | only single
-#      hosts: [] # Default for multi or single host | overwrite host
-#        - example1.com # Example
-#        - example2.com # Example
-#      path: / # Default
-#      pathType: ImplementationSpecific # Default
-#      annotations: {} # Default
-#      tls: true # Default
-## For enable NetworkPolicy and create
-#    networkPolicy:
-#      enabled: true # Default false
-#      useDefaultPolicy: true # Default true, allows access only from the current namespace
-#      allowFromAllNamespaces: false # Default false, allows you to control access permission from all namespaces# policyTypes: [“Ingress”, “Egress”] # Default [“Ingress”].
-#      ingressAllowAllPods: false # Allow all pods ingress
-#      egressAllowAllPods: false # Allow all pods egress
-#      ipList:
-#        - 1.1.1.1 # /32 Default prefix
-#        - 192.168.0.0/16 # or set self mask
-
-## For enable NetworkPolicy and create
-#    networkPolicy:
-#      useDefaultPolicy: false # Use default policy for allow allow for podSelector/namespaceSelector
-#      ipList:
-#        - 1.1.1.1 # /32 Default prefix
-#        - 192.168.0.0/16 # or set self mask
-
 resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
   #   cpu: 100m
   #   memory: 128Mi
@@ -302,11 +261,6 @@ containerSecurityContext: {}
 #  runAsNonRoot: true
 #  runAsUser: 1000
 
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -317,7 +271,7 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-# ---
+
 
 # BEGIN--------------------------- CronJob ------------------------
 #cronjobs: [] # Default

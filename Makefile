@@ -13,7 +13,7 @@ create-namespace:
 	kubectl create namespace test
 
 diff:
-	helm -n test diff upgrade test charts/global-one --allow-unreleased --context 1 --debug
+	helm -n test diff upgrade test charts/global-one --allow-unreleased --context 1 --debug -f charts/global-one/values.yaml
 
 upgrade_or_install:
 	helm -n test upgrade --install test charts/global-one

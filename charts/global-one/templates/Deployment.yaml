@@ -1,3 +1,4 @@
+{{- $fullname := include "global-one.fullname" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,10 +23,15 @@ spec:
     {{- end }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- end }}
+
+        {{- if .Values.configMap }}
+        checksum/configmap: {{ include (print $.Template.BasePath "/ConfigMap.yaml") . | sha256sum }}
+        {{- end }}
+
       labels:
         {{- include "global-one.selectorLabels" . | nindent 8 }}
 
@@ -37,10 +43,18 @@ spec:
     spec:
 
       # Connect volumes
-      {{- if .Values.connectVolume }}
       volumes:
+        {{- if .Values.configMap }}
+        {{- range .Values.configMap }}
+        - name: {{ $fullname }}-{{ .name }}
+          configMap:
+            name: {{ $fullname }}-{{ .name }}
+        {{- end }}
+        {{- end }}
+
+        {{- if .Values.connectVolume }}
         {{ toYaml .Values.connectVolume | nindent 8 }}
-      {{- end }}
+        {{- end }}
 
       # Init containers
       {{- if .Values.initContainers }}

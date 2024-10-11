@@ -2,7 +2,7 @@
 {{- $labels := include "global-one.labels" . -}}
 {{- if .Values.configMap }}
 {{- range .Values.configMap }}
-
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
