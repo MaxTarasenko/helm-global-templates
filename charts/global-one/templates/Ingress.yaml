@@ -7,6 +7,8 @@
 {{- $port := .port -}}
 {{- $hosts := .ingress.hosts | default (list) -}}
 {{- $singleHost := .ingress.host | default "global-one.local" -}}
+{{- $existingSecret := .ingress.existingSecret | default "" -}}
+{{- $existingSecrets := .ingress.existingSecrets | default dict -}}
 
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -19,18 +21,28 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if and .ingress.tls (or (gt (len $hosts) 0) (ne $singleHost "global-one.local")) }}
+  {{- if .ingress.tls }}
   tls:
     {{- if gt (len $hosts) 0 }}
     {{- range $hosts }}
     - hosts:
         - {{ . }}
+      {{- if and (hasKey $existingSecrets .) (typeIs "map[string]interface {}" $existingSecrets) }}
+      secretName: {{ index $existingSecrets . | quote }}
+      {{- else if $existingSecret }}
+      secretName: {{ $existingSecret | quote }}
+      {{- else }}
       secretName: {{ printf "%s-tls" . }}
+      {{- end }}
     {{- end }}
     {{- else }}
     - hosts:
         - {{ $singleHost }}
+      {{- if $existingSecret }}
+      secretName: {{ $existingSecret | quote }}
+      {{- else }}
       secretName: {{ printf "%s-tls" $singleHost }}
+      {{- end }}
     {{- end }}
   {{- end }}
   rules:
