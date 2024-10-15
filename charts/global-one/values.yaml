@@ -79,7 +79,10 @@ service:
 #      path: / # Default
 #      pathType: ImplementationSpecific # Default
 #      annotations: {} # Default
-#      tls: true # Default
+#      tls: false # Default
+#      existingSecret: "custom-tls"
+#      existingSecrets:
+#        example2.com: "custom-tls"
 ## For enable NetworkPolicy and create
 #    networkPolicy:
 #      enabled: true # Default false
