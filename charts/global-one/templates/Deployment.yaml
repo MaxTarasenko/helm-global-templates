@@ -35,8 +35,8 @@ spec:
       labels:
         {{- include "global-one.selectorLabels" . | nindent 8 }}
 
-        # Include podLabels
         {{- with .Values.podLabels }}
+        # Include podLabels
         {{- toYaml . | nindent 8 }}
         {{- end }}
 
@@ -56,7 +56,20 @@ spec:
         {{ toYaml .Values.connectVolume | nindent 8 }}
         {{- end }}
 
-      # Init containers
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "global-one.serviceAccountName" . }}
+      {{- end }}
+
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
       {{- if .Values.initContainers }}
       initContainers:
         {{- range .Values.initContainers }}
@@ -77,32 +90,21 @@ spec:
               {{- end }}
           {{- end }}
         {{- end }}
-        {{- end }}
-
-      # Image pull secrets
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
       {{- end }}
-
-      # Service account
-      {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "global-one.serviceAccountName" . }}
-      {{- end }}
-
-      # Security context
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
 
       containers:
         - name: {{ include "global-one.fullname" . }}
+
           {{ if .Values.lifecycle }}
           lifecycle:
              {{ toYaml .Values.lifecycle | nindent 12 }}
-
           {{ end }}
+
+          {{- with .Values.containerSecurityContext }}
           securityContext:
-            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
           image: {{ include "global-one.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.command }}
@@ -132,38 +134,59 @@ spec:
               protocol: TCP
               {{ end }}
             {{- end }}
+
           {{- with .Values.healthCheck }}
-          {{- if .livenessProbe.enable }}
+          #livenessProbe
+          {{- if .livenessProbe }}
+          {{- if .livenessProbe.enabled }}
           livenessProbe:
-            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .livenessProbe.periodSeconds }}
-            timeoutSeconds: {{ .livenessProbe.timeoutSeconds }}
-            failureThreshold: {{ .livenessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .livenessProbe.periodSeconds | default 20 }}
+            timeoutSeconds: {{ .livenessProbe.timeoutSeconds | default 10 }}
+            failureThreshold: {{ .livenessProbe.failureThreshold | default 5 }}
             httpGet:
-              path: {{ .path }}
-              port: {{ .port }}
+              {{- if .livenessProbe.path }}
+              path: {{ .livenessProbe.path }}
+              {{- else }}
+              path: {{ .singlePath | default "/" }}
+              {{- end }}
+              port: {{ .port | default "http" }}
           {{- end }}
-          {{- if .readinessProbe.enable }}
+          {{- end }}
+          #readinessProbe
+          {{- if .readinessProbe }}
+          {{- if .readinessProbe.enabled }}
           readinessProbe:
-            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .readinessProbe.periodSeconds }}
-            timeoutSeconds: {{ .readinessProbe.timeoutSeconds }}
-            failureThreshold: {{ .readinessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .readinessProbe.periodSeconds | default 20 }}
+            timeoutSeconds: {{ .readinessProbe.timeoutSeconds | default 10 }}
+            failureThreshold: {{ .readinessProbe.failureThreshold | default 5 }}
             httpGet:
-              path: {{ .path }}
-              port: {{ .port }}
+              {{- if .readinessProbe.path }}
+              path: {{ .readinessProbe.path }}
+              {{- else }}
+              path: {{ .singlePath | default "/" }}
+              {{- end }}
+              port: {{ .port | default "http" }}
           {{- end }}
           {{- end }}
+          {{- end }}
+
+          {{- with .Values.resources }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
