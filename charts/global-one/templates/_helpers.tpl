@@ -62,14 +62,3 @@ Selector labels
 {{- define "global-one.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "global-one.fullname" . }}
 {{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "global-one.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "global-one.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}

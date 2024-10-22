@@ -1,0 +1,16 @@
+{{- $labels := include "global-one.labels" . -}}
+{{- if .Values.rbac }}
+{{- if and .Values.serviceAccount.create .Values.rbac.create -}}
+{{- range .Values.rbac.roles }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- $labels | nindent 4 }}
+rules:
+{{ toYaml .rules | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

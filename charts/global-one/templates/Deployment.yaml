@@ -61,8 +61,8 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
 
-      {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "global-one.serviceAccountName" . }}
+      {{- if and .Values.serviceAccount .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "global-one.fullname" . }}
       {{- end }}
 
       {{- with .Values.podSecurityContext }}
