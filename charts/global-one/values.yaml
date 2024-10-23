@@ -17,21 +17,6 @@ image:
   tag: "latest"
   pullSecrets: []
 
-## If you need ENV Variables
-env: {}
-  #  # Set with simple value
-  #  DB_HOST: "host"
-  #  # Set with secret
-  #  DB_PASS:
-  #    secret:
-  #      name: "db-secrets"
-  #      key: "password"
-  #  # Set url to service with cluster local
-  #  SERVICE_URL: # http://{{.service_url.name}}.{{$.Release.Namespace}}.svc.cluster.local.:{{.service_url.port}}
-  #    service_url:
-  #      name: "auth"
-  #      port: "8080"
-
 strategy:
   type: RollingUpdate
   rollingUpdate:
@@ -46,6 +31,26 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 # END--------------------------- Standard config ------------------------
+
+
+
+# BEGIN--------------------------- ENV Variables ------------------------
+#env: # Default {}
+## Set with simple value
+#  DB_HOST: "host"
+## Set with secret
+#  DB_PASS:
+#    secret:
+#      name: "db-secrets"
+#      key: "password"
+## Set url to service with cluster local
+#  SERVICE_URL: # http://{{.service_url.name}}.{{$.Release.Namespace}}.svc.{{.service_url.cluster}}:{{.service_url.port}}{{.service_url.path}}
+#    service_url:
+#      name: "auth"
+#      port: "8080"
+#      cluster: "cluster.local" # Default
+#      path: "" # Default
+# END--------------------------- ENV Variables ------------------------
 
 
 
@@ -279,6 +284,8 @@ autoscaling:
 #  runAsUser: 1000
 # END--------------------------- Container Security Context config ------------------------
 
+
+
 # BEGIN--------------------------- Service Account config ------------------------
 ## Create ServiceAccount
 #serviceAccount:
@@ -299,6 +306,7 @@ autoscaling:
 #          resources: ["services"]
 #          verbs: ["get", "list", "watch"]
 # END--------------------------- Service Account config ------------------------
+
 
 
 # BEGIN--------------------------- CronJob ------------------------

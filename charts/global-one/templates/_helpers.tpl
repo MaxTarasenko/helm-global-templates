@@ -42,7 +42,7 @@ image block
       name: {{ $value.secret.name | quote }}
       key: {{ $value.secret.key | quote }}
   {{- else if $value.service_url }}
-  value: {{ printf "http://%s.%s.svc.cluster.local.:%s" $value.service_url.name (default "default" $global.Release.Namespace) (toString $value.service_url.port) | quote }}
+  value: {{ printf "http://%s.%s.svc.%s:%s%s" $value.service_url.name (default "default" $global.Release.Namespace) (default "cluster.local" $value.service_url.cluster) (toString $value.service_url.port) (default "" $value.service_url.path) | quote }}
   {{- end }}
 {{- end }}
 {{- end -}}
