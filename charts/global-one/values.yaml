@@ -1,4 +1,5 @@
 # Default values for global-one.
+defaultValues: "https://github.com/MaxTarasenko/helm-global-templates/blob/main/charts/global-one/values.yaml"
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
