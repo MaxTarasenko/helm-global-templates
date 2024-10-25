@@ -31,6 +31,9 @@ podLabels: {}
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+#podSecurityContext: # Default {}
+#  fsGroup: 2000
 # END--------------------------- Standard config ------------------------
 
 
@@ -254,23 +257,31 @@ lifecycle: {}
 #   exec:
 #     command: ["/bin/sh","-c","/usr/sbin/nginx -s reload"]
 
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 10
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-  scaleUp:
-    Pods:
-      value: 1
-      periodSeconds: 15
-  scaleDown:
-    Pods:
-      value: 1
-      periodSeconds: 60
 
-#podSecurityContext: # Default {}
-#  fsGroup: 2000
+
+# BEGIN--------------------------- AutoScaling config ------------------------
+#autoscaling:
+#  enabled: true # Default false (or true - disable replicas and enable autoscaling)
+#  minReplicas: 1 # Default
+#  maxReplicas: 3 # Default
+#  metrics: # Default (CPU/Utilization/80)
+#    - name: cpu
+#      type: Utilization
+#      value: 80
+#    - name: memory
+#      type: Utilization
+#      value: 80
+#  behavior: # Default disable
+#    scaleUp:
+#      - type: Pods # or Percent
+#        value: 1
+#        periodSeconds: 15
+#    scaleDown:
+#      - type: Pods # or Percent
+#        value: 1
+#        periodSeconds: 60
+# END--------------------------- AutoScaling config ------------------------
+
 
 
 # BEGIN--------------------------- Container Security Context config ------------------------

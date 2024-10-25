@@ -1,9 +1,10 @@
-{{- if .Values.autoscaling.enabled }}
+{{- if and .Values.autoscaling .Values.autoscaling.enabled }}
 {{- if semverCompare ">=1.23-0" .Capabilities.KubeVersion.GitVersion -}}
 apiVersion: autoscaling/v2
 {{- else -}}
 apiVersion: autoscaling/v2beta2
 {{- end }}
+
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "global-one.fullname" . }}
@@ -14,34 +15,52 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: {{ include "global-one.fullname" . }}
-  minReplicas: {{ .Values.autoscaling.minReplicas }}
-  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+
+  {{- with .Values.autoscaling }}
+  minReplicas: {{ .minReplicas | default 1 }}
+  maxReplicas: {{ .maxReplicas | default 3 }}
   metrics:
-    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .metrics }}
+    {{- range .metrics }}
+    - type: Resource
+      resource:
+        name: {{ .name }}
+        target:
+          type: {{ .type }}
+          averageUtilization: {{ .value }}
+    {{- end }}
+    {{- else }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+          averageUtilization: 80
     {{- end }}
-    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
-    {{- end }}
+
+  {{- with .behavior }}
   behavior:
+
+    {{ if .scaleUp }}
     scaleUp:
       policies:
-        - type: Pods
-          value: {{ .Values.autoscaling.scaleUp.Pods.value }}
-          periodSeconds: {{ .Values.autoscaling.scaleUp.Pods.periodSeconds }}
-    scaleDown:
+        {{- range .scaleUp }}
+        - type: {{ .type }}
+          value: {{ .value | default 1 }}
+          periodSeconds: {{ .periodSeconds | default 15 }}
+        {{- end }}
+    {{ end }}
+
+    {{ if .scaleDown }}
+    scaleUp:
       policies:
-        - type: Pods
-          value: {{ .Values.autoscaling.scaleDown.Pods.value }}
-          periodSeconds: {{ .Values.autoscaling.scaleDown.Pods.periodSeconds }}
+        {{- range .scaleDown }}
+        - type: {{ .type }}
+          value: {{ .value | default 1 }}
+          periodSeconds: {{ .periodSeconds | default 15 }}
+        {{- end }}
+    {{ end }}
+
+  {{- end }}
+  {{- end }}
 {{- end }}
