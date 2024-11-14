@@ -16,7 +16,10 @@ diff:
 	helm -n test diff upgrade test charts/global-one --allow-unreleased --context 1 --debug -f charts/global-one/values.yaml
 
 upgrade_or_install:
-	helm -n test upgrade --install test charts/global-one
+	helm -n test upgrade --install test --create-namespace charts/global-one
+
+uninstall:
+	helm -n test uninstall test
 
 package:
 	@helm package charts/global-one --version=$(HELM_CHART_VERSION)

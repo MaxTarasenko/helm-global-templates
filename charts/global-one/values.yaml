@@ -1,40 +1,43 @@
-# Default values for global-one.
+## Default values for global-one.
 Default_Values-And-Instructions: "https://github.com/MaxTarasenko/helm-global-templates/blob/main/charts/global-one/values.yaml"
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+## -----------------------------------------------------------------------------------------------------------------------------
 
 
 
 # BEGIN--------------------------- Standard config ------------------------
 image:
-  # --- with 'env' used [repository/env/name:tag] ---
-  env: ""
-  # --- with only 'repository' without 'env' used [repository/name:tag]
-  repository: ""
-  # --- with only 'name' used [name:tag]
+## --- with 'env' used [repository/env/name:tag] ---
+#  env: ""
+## --- with only 'repository' without 'env' used [repository/name:tag]
+#  repository: ""
+## --- with only 'name' used [name:tag]
   name: nginx
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
-  pullSecrets: []
+#  pullPolicy: Always # Default
+#  pullSecrets: [] # imagePullSecrets
 
-strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxSurge: "25%"
-    maxUnavailable: "25%"
+#replicaCount: 1
 
-replicaCount: 1
+#podAnnotations: {}
+#podLabels: {}
+#nodeSelector: {}
+#tolerations: []
+#affinity: {}
 
-podAnnotations: {}
-podLabels: {}
-nodeSelector: {}
-tolerations: []
-affinity: {}
-
-#podSecurityContext: # Default {}
-#  fsGroup: 2000
+#command: ["python", "-m"]
+#args: ["my-app", "--arg1", "value1"]
 # END--------------------------- Standard config ------------------------
+
+
+
+# BEGIN--------------------------- Strategy config ------------------------
+#strategy: # Default RollingUpdate
+#  type: RollingUpdate # or Recreate (without rollingUpdate settings)
+#  rollingUpdate:
+#    maxSurge: "25%" # Default 25
+#    maxUnavailable: "25%" # Default 25
+# BEGIN--------------------------- Strategy config ------------------------
+
 
 
 
@@ -163,47 +166,10 @@ service:
 # END--------------------------- ConfigMap ------------------------
 
 
-#command: ["python", "-m"]
-#args: ["my-app", "--arg1", "value1"]
 
-
-# If you need multiple containers
-containers: []
-#  - name: container1
-#    image:
-#      repository: repo1
-#      name: name1
-#      tag: tag1
-#    command: ["python", "-m"]
-#    args: ["my-app", "--arg1", "value1"]
-#    env:
-#      # Set with simple value
-#      DB_HOST: "default-host"
-#      DB_USER: "default-user"
-#      # Set with secret
-#      DB_PASS:
-#        secret:
-#          name: "default-secrets"
-#          key: "default-password"
-#  - name: container2
-#    image:
-#      repository: repo2
-#      name: name2
-#      tag: tag2
-#    command: ["python", "-m"]
-#    args: ["my-app", "--arg1", "value1"]
-#    env:
-#      # Set with simple value
-#      DB_HOST: "default-host"
-#      DB_USER: "default-user"
-#      # Set with secret
-#      DB_PASS:
-#        secret:
-#          name: "default-secrets"
-#          key: "default-password"
-
+# BEGIN--------------------------- Init Containers config ------------------------
 ## For init container
-initContainers: []
+#initContainers: # Default []
 #  - name: my-init-container
 #    image:
 #      repository: my-repo
@@ -218,7 +184,11 @@ initContainers: []
 #        secret:
 #          name: "init-default-secrets"
 #          key: "init-default-password"
+# END--------------------------- Init Containers config ------------------------
 
+
+
+# BEGIN--------------------------- Connect volumes in the Deployment ------------------------
 ## Connect volumes in the Deployment
 #connectVolume: [] # Default
 ## Create PVC
@@ -239,23 +209,32 @@ initContainers: []
 #  - name: dockovpn-config
 #    configMap:
 #      name: dockovpn-config
+# END--------------------------- Connect volumes in the Deployment ------------------------
 
+
+
+# BEGIN--------------------------- Mounts volumes to container ------------------------
 ## Mounts volumes to container when one container
-volumeMounts: []
+#volumeMounts: # Default []
 #  - name: gateway-private-key
 #    mountPath: /keys/private.key
 #    subPath: gateway-private-key
 #  - name: dockovpn-config
 #    mountPath: /opt/Dockovpn/config
 #    subPath: server.conf
+# END--------------------------- Mounts volumes to container ------------------------
 
-lifecycle: {}
+
+
+# BEGIN--------------------------- LifeCycle config ------------------------
+#lifecycle: # Default {}
 #  preStop:
 #    exec:
 #      command: ["/bin/sh","-c","/usr/sbin/nginx -s quit"]
-# postStart:
-#   exec:
-#     command: ["/bin/sh","-c","/usr/sbin/nginx -s reload"]
+#  postStart:
+#    exec:
+#      command: ["/bin/sh","-c","/usr/sbin/nginx -s reload"]
+# END--------------------------- LifeCycle config ------------------------
 
 
 
@@ -288,13 +267,25 @@ lifecycle: {}
 #containerSecurityContext: # Default {}
 #  seccompProfile:
 #    type: RuntimeDefault
+#  appArmorProfile:
+#    localhostProfile: nodejs-basic # Example
+#    type: Localhost
+#  allowPrivilegeEscalation: false # Prohibits escalation of privileges
+#  runAsNonRoot: true              # Prohibits running as root
+#  readOnlyRootFilesystem: true    # Read-only file system
+#  runAsUser: 1000                 # Run as user ID 1000
 #  capabilities:
 #    drop:
-#    - ALL
-#  readOnlyRootFilesystem: true
-#  runAsNonRoot: true
-#  runAsUser: 1000
+#      - ALL                       # Disabling all Linux privileges
 # END--------------------------- Container Security Context config ------------------------
+
+
+
+# BEGIN--------------------------- Pod Security Context config ------------------------
+#podSecurityContext: # Default {}
+#  fsGroup: 2000 # A group to manage the file system
+# END--------------------------- Pod Security Context config ------------------------
+
 
 
 
