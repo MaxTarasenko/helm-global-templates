@@ -97,12 +97,14 @@ image:
 
 
 # BEGIN--------------------------- Service and Ingress ------------------------
-service:
-  - name: http # Default
-    port: 80
-#    type: NodePort # Default
+#service:
+#  - name: http
+#    port: 80
+#    type: NodePort # Default ClusterIP or (LoadBalancer/NodePort)
 #    nodePort: 3000 # Default disable and random create
 #    protocol: TCP # Default
+## For create separate service
+#    separate: true
 ## For enable headless service without ip for service
 #    headless: true
 ## For enable ingress and create

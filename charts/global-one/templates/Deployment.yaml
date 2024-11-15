@@ -125,8 +125,9 @@ spec:
             {{ toYaml . | nindent 12 }}
           {{- end }}
 
+          {{- with .Values.service }}
           ports:
-            {{- range .Values.service }}
+            {{- range . }}
             - name: {{ .name }}
               containerPort: {{ .port }}
               {{ if .protocol }}
@@ -135,6 +136,7 @@ spec:
               protocol: TCP
               {{ end }}
             {{- end }}
+          {{- end }}
 
           {{- with .Values.healthCheck }}
           #livenessProbe

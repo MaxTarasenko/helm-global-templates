@@ -1,12 +1,15 @@
 {{- $fullname := include "global-one.fullname" . -}}
 {{- $labels := include "global-one.labels" . -}}
 {{- $selectorLabels := include "global-one.selectorLabels" . -}}
+{{- $sharedHeadlessPorts := list }}
+
 {{- range .Values.service }}
 {{- if .headless }}
+{{- if .separate }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullname }}-headless
+  name: {{ $fullname }}-{{ .name }}-headless
   labels:
     {{- $labels | nindent 4 }}
 spec:
@@ -18,5 +21,30 @@ spec:
       name: {{ .name }}
   selector:
     {{- $selectorLabels | nindent 4 }}
+---
+{{- else }}
+{{- $sharedHeadlessPort := dict "port" .port "targetPort" .name "protocol" (default "TCP" .protocol) "name" .name }}
+{{- $sharedHeadlessPorts = append $sharedHeadlessPorts $sharedHeadlessPort }}
 {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if gt (len $sharedHeadlessPorts) 0 }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-headless
+  labels:
+    {{- $labels | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+    {{- range $sharedHeadlessPorts }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      protocol: {{ .protocol }}
+      name: {{ .name }}
+    {{- end }}
+  selector:
+    {{- $selectorLabels | nindent 4 }}
 {{- end }}
