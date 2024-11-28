@@ -52,13 +52,7 @@ Common labels
 */}}
 {{- define "global-one.labels" -}}
 helm.sh/chart: {{ include "global-one.chart" . }}
-{{ include "global-one.selectorLabels" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
-
-{{/*
-Selector labels
-*/}}
-{{- define "global-one.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "global-one.fullname" . }}
+app.kubernetes.io/instance: {{ include "global-one.fullname" . }}
 {{- end }}

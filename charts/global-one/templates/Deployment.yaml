@@ -11,7 +11,7 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "global-one.selectorLabels" . | nindent 6 }}
+      {{- include "global-one.labels" . | nindent 6 }}
   {{ with .Values.strategy }}
   strategy:
     type: {{ .type | default "RollingUpdate" }}
@@ -33,7 +33,7 @@ spec:
         {{- end }}
 
       labels:
-        {{- include "global-one.selectorLabels" . | nindent 8 }}
+        {{- include "global-one.labels" . | nindent 8 }}
 
         {{- with .Values.podLabels }}
         # Include podLabels
@@ -52,8 +52,17 @@ spec:
         {{- end }}
         {{- end }}
 
-        {{- if .Values.connectVolume }}
-        {{ toYaml .Values.connectVolume | nindent 8 }}
+        {{- with .Values.pvc }}
+        {{- range .create }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
+        {{ range .connect }}
+        - name: {{ .name }}
+          persistentVolumeClaim:
+            claimName: {{ .name }}
+        {{- end }}
         {{- end }}
 
       {{- with .Values.image.pullSecrets }}
@@ -120,10 +129,22 @@ spec:
             {{- include "global-one.env" . | nindent 12 }}
           {{- end }}
 
-          {{- with .Values.volumeMounts }}
           volumeMounts:
-            {{ toYaml . | nindent 12 }}
-          {{- end }}
+            {{- with .Values.pvc }}
+            {{- range .create }}
+            {{- if .mountPath }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+            {{- end }}
+
+            {{- range .connect }}
+            {{- if .mountPath }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
 
           {{- with .Values.service }}
           ports:

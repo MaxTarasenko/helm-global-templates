@@ -132,6 +132,42 @@ image:
 #      ipList:
 #        - 1.1.1.1 # /32 Default prefix
 #        - 192.168.0.0/16 # or set self mask
+## Istio
+#    istio:
+#      virtualService:
+#        - name: http
+#          hosts:
+#            - my-app.example.com
+#          gateways:
+#            - ingressgateway
+#          http:
+#            - match:
+#                - uri:
+#                    prefix: /
+#              route:
+#                - destination:
+#                    host: my-app
+#                    port: 8080
+#      destinationRule:
+#        - name: http
+#          host: my-app
+#          trafficPolicy:
+#            tls:
+#              mode: ISTIO_MUTUAL
+#      gateway:
+#        - name: ingressgateway
+#          selector:
+#            istio: ingressgateway
+#          servers:
+#            - port:
+#                number: 443
+#                name: https
+#                protocol: HTTPS
+#              hosts:
+#                - my-app.example.com
+#              tls:
+#                credentialName: my-custom-secret # Указать, если используете собственный секрет
+#                mode: SIMPLE # SIMPLE для HTTPS с TLS
 # END--------------------------- Service and Ingress ------------------------
 
 
@@ -190,19 +226,29 @@ image:
 
 
 
-# BEGIN--------------------------- Connect volumes in the Deployment ------------------------
-## Connect volumes in the Deployment
-#connectVolume: [] # Default
-## Create PVC
-#  - name: dockovpn-data
-#    persistentVolumeClaim:
-#      claimName: dockovpn-data
-#      storageClassName: "" # Default
+# BEGIN---------------------------PVC config ------------------------
+#pvc: # Default []
+## For Create PVC and Connect to Deployment
+#  create:
+#    - name: app-data
 #      size: "1Gi" # Default
+#      mountPath: '/app/data' # For Connect to Container
+#      storageClassName: "" # Default
 #      annotations: {} # Default
-#      accessModes: "" # Default 'ReadWriteOnce'
+#      accessModes:
+#        - "ReadWriteOnce" # Default
 #      selector: {} # Default
-#        matchLabels: {} # Default
+#      matchLabels: {} # Default
+## Connect to Deployment
+#  connect:
+#    - name: app-data-created
+#      mountPath: '/app/data' # For Connect to Container
+# END---------------------------PVC config ------------------------
+
+
+
+# BEGIN--------------------------- Mounts (secret/configMap) ------------------------
+#volume: # Default []
 ## Connect 'secret'
 #  - name: gateway-private-key
 #    secret:
@@ -211,7 +257,7 @@ image:
 #  - name: dockovpn-config
 #    configMap:
 #      name: dockovpn-config
-# END--------------------------- Connect volumes in the Deployment ------------------------
+# END--------------------------- Mounts (secret/configMap) --------------------------
 
 
 

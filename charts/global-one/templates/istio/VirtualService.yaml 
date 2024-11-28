@@ -1,0 +1,25 @@
+{{/*{{- $fullname := include "global-one.fullname" . -}}*/}}
+{{/*{{- $labels := include "global-one.labels" . -}}*/}}
+{{/*{{- $selectorLabels := include "global-one.selectorLabels" . -}}*/}}
+{{/*{{- $sharedPorts := list }}*/}}
+
+{{/*apiVersion: networking.istio.io/v1beta1*/}}
+{{/*kind: VirtualService*/}}
+{{/*metadata:*/}}
+{{/*  name: {{ include "global-one.fullname" . }}-vs*/}}
+{{/*  labels:*/}}
+{{/*    {{- include "global-one.labels" . | nindent 4 }}*/}}
+{{/*spec:*/}}
+{{/*  hosts:*/}}
+{{/*    - {{ .Values.istio.host }}*/}}
+{{/*  gateways:*/}}
+{{/*    - {{ .Values.istio.gateway }}*/}}
+{{/*  http:*/}}
+{{/*    - match:*/}}
+{{/*        - uri:*/}}
+{{/*            prefix: /*/}}
+{{/*      route:*/}}
+{{/*        - destination:*/}}
+{{/*            host: {{ include "global-one.fullname" . }}*/}}
+{{/*            port:*/}}
+{{/*              number: {{ .Values.service.port }}*/}}

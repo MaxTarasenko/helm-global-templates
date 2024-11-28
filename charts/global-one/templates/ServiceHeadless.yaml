@@ -1,6 +1,5 @@
 {{- $fullname := include "global-one.fullname" . -}}
 {{- $labels := include "global-one.labels" . -}}
-{{- $selectorLabels := include "global-one.selectorLabels" . -}}
 {{- $sharedHeadlessPorts := list }}
 
 {{- range .Values.service }}
@@ -20,7 +19,7 @@ spec:
       protocol: {{ default "TCP" .protocol }}
       name: {{ .name }}
   selector:
-    {{- $selectorLabels | nindent 4 }}
+    {{- $labels | nindent 4 }}
 ---
 {{- else }}
 {{- $sharedHeadlessPort := dict "port" .port "targetPort" .name "protocol" (default "TCP" .protocol) "name" .name }}
@@ -46,5 +45,5 @@ spec:
       name: {{ .name }}
     {{- end }}
   selector:
-    {{- $selectorLabels | nindent 4 }}
+    {{- $labels | nindent 4 }}
 {{- end }}
