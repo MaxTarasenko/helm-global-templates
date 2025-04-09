@@ -1,0 +1,29 @@
+{{- $labels := include "global-one.labels" . -}}
+{{- $selectorLabels := include "global-one.selectorLabels" . -}}
+{{- $fullname := include "global-one.fullname" . -}}
+
+{{- with .Values.podDisruptionBudget }}
+{{- if .enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $fullname }}
+  labels:
+    {{- $labels | nindent 4 }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .minAvailable }}
+  minAvailable: {{ .minAvailable }}
+  {{- else if .maxUnavailable }}
+  maxUnavailable: {{ .maxUnavailable }}
+  {{- else }}
+  minAvailable: 1
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- $selectorLabels | nindent 6 }}
+{{- end }}
+{{- end }}

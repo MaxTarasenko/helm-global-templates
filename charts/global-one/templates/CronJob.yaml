@@ -13,6 +13,9 @@ metadata:
   labels:
     {{ $labels | nindent 4 }}
 spec:
+  {{ if .timeZone }}
+  timeZone: {{ .timeZone | quote }}
+  {{ end }}
   jobTemplate:
     spec:
       {{ if .ttlSecondsAfterFinished }}

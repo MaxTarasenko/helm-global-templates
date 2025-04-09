@@ -5,6 +5,8 @@ Default_Values-And-Instructions: "https://github.com/MaxTarasenko/helm-global-te
 
 
 # BEGIN--------------------------- Standard config ------------------------
+clusterDomain: cluster.local
+
 image:
 ## --- with 'env' used [repository/env/name:tag] ---
 #  env: ""
@@ -93,8 +95,7 @@ image:
 #    failureThreshold: 5 # Default [5]
 # END--------------------------- Health Check config ------------------------
 
-
-
+# TODO - to take the health check to the service
 
 # BEGIN--------------------------- Service and Ingress ------------------------
 #service:
@@ -386,3 +387,12 @@ image:
 #    imagePullPolicy: Always
 #    ttlSecondsAfterFinished: 60
 # END--------------------------- CronJob ------------------------
+
+# BEGIN--------------------------- Pod Disruption Budget ------------------------
+# podDisruptionBudget:
+#   enabled: false
+#   minAvailable: 1  # Minimum number of pods that must be available during voluntary disruptions
+#   maxUnavailable: 1  # Maximum number of pods that can be unavailable during voluntary disruptions
+#   ## NOTE: Use either minAvailable OR maxUnavailable, not both
+#   annotations: {}  # Additional annotations for the PodDisruptionBudget
+# END--------------------------- Pod Disruption Budget ------------------------

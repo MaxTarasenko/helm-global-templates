@@ -56,3 +56,11 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/name: {{ include "global-one.fullname" . }}
 app.kubernetes.io/instance: {{ include "global-one.fullname" . }}
 {{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "global-one.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "global-one.fullname" . }}
+app.kubernetes.io/instance: {{ include "global-one.fullname" . }}
+{{- end }}

@@ -15,7 +15,7 @@ create-namespace:
 diff:
 	helm -n test diff upgrade test charts/global-one --allow-unreleased --context 1 --debug -f charts/global-one/values.yaml
 
-upgrade_or_install:
+upgrade:
 	helm -n test upgrade --install test --create-namespace charts/global-one
 
 uninstall:
