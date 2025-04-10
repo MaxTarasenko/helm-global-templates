@@ -42,7 +42,6 @@ image:
 
 
 
-
 # BEGIN--------------------------- ENV Variables ------------------------
 #env: # Default {}
 ## Set with simple value
@@ -75,28 +74,6 @@ image:
 
 
 
-# BEGIN--------------------------- Health Check config ------------------------
-#healthCheck: # Default disabled
-#  singlePath: / # Default [/]
-#  port: http # Default [http]
-#  livenessProbe:
-#    enabled: true
-#    path: / # Optional (priority)
-#    initialDelaySeconds: 30 # Default [30]
-#    periodSeconds: 20 # Default [20]
-#    timeoutSeconds: 10 # Default [10]
-#    failureThreshold: 5 # Default [5]
-#  readinessProbe:
-#    enabled: true
-#    path: / # Optional (priority)
-#    initialDelaySeconds: 30 # Default [30]
-#    periodSeconds: 20 # Default [20]
-#    timeoutSeconds: 10 # Default [10]
-#    failureThreshold: 5 # Default [5]
-# END--------------------------- Health Check config ------------------------
-
-# TODO - to take the health check to the service
-
 # BEGIN--------------------------- Service and Ingress ------------------------
 #service:
 #  - name: http
@@ -104,11 +81,33 @@ image:
 #    type: NodePort # Default ClusterIP or (LoadBalancer/NodePort)
 #    nodePort: 3000 # Default disable and random create
 #    protocol: TCP # Default
-## For create separate service
+##   For create separate service
 #    separate: true
-## For enable headless service without ip for service
+##   For enable headless service without ip for service
 #    headless: true
-## For enable ingress and create
+##   For enable health check
+#    healthCheck: # Default disabled
+#      enabled: true
+#      path: / # Default [/]
+#      initialDelaySeconds: 2 # Default [2]
+#      periodSeconds: 10 # Default [10]
+#      timeoutSeconds: 5 # Default [5]
+#      failureThreshold: 5 # Default [5]
+#      livenessProbe:
+#        enabled: true
+#        path: / # Optional (priority)
+#        initialDelaySeconds: 50 # Optional (override common)
+#        periodSeconds: 30 # Optional (override common)
+#        timeoutSeconds: 20 # Optional (override common)
+#        failureThreshold: 10 # Optional (override common)
+#      readinessProbe:
+#        enabled: true
+#        path: / # Optional (priority)
+#        initialDelaySeconds: 50 # Optional (override common)
+#        periodSeconds: 30 # Optional (override common)
+#        timeoutSeconds: 20 # Optional (override common)
+#        failureThreshold: 10 # Optional (override common)
+##   For enable ingress and create
 #    ingress:
 #      enabled: true # Default false
 #      className: "" # Default
@@ -123,7 +122,7 @@ image:
 #      existingSecret: "custom-tls"
 #      existingSecrets:
 #        example2.com: "custom-tls"
-## For enable NetworkPolicy and create
+##   For enable NetworkPolicy and create
 #    networkPolicy:
 #      enabled: true # Default false
 #      useDefaultPolicy: true # Default true, allows access only from the current namespace
@@ -133,7 +132,7 @@ image:
 #      ipList:
 #        - 1.1.1.1 # /32 Default prefix
 #        - 192.168.0.0/16 # or set self mask
-## Istio
+##   Istio config (not implemented)
 #    istio:
 #      virtualService:
 #        - name: http

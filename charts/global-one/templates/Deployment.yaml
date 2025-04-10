@@ -159,39 +159,35 @@ spec:
             {{- end }}
           {{- end }}
 
-          {{- with .Values.healthCheck }}
-          #livenessProbe
-          {{- if .livenessProbe }}
-          {{- if .livenessProbe.enabled }}
+          {{- $healthCheckDefined := false }}
+          {{- range .Values.service }}
+          {{- if and .healthCheck (not $healthCheckDefined) }}
+          {{- $healthCheckDefined = true }}
+          {{- $healthCheck := .healthCheck }}
+          {{- if $healthCheck.enabled }}
+
+          {{- if and $healthCheck.livenessProbe $healthCheck.livenessProbe.enabled | default $healthCheck.enabled }}
           livenessProbe:
-            initialDelaySeconds: {{ .livenessProbe.initialDelaySeconds | default 30 }}
-            periodSeconds: {{ .livenessProbe.periodSeconds | default 20 }}
-            timeoutSeconds: {{ .livenessProbe.timeoutSeconds | default 10 }}
-            failureThreshold: {{ .livenessProbe.failureThreshold | default 5 }}
+            initialDelaySeconds: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.initialDelaySeconds | default $healthCheck.initialDelaySeconds | default 2 }}
+            periodSeconds: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.periodSeconds | default $healthCheck.periodSeconds | default 10 }}
+            timeoutSeconds: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.timeoutSeconds | default $healthCheck.timeoutSeconds | default 5 }}
+            failureThreshold: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.failureThreshold | default $healthCheck.failureThreshold | default 5 }}
             httpGet:
-              {{- if .livenessProbe.path }}
-              path: {{ .livenessProbe.path }}
-              {{- else }}
-              path: {{ .singlePath | default "/" }}
-              {{- end }}
-              port: {{ .port | default "http" }}
+              path: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.path | default $healthCheck.path | default "/" }}
+              port: {{ .name }}
           {{- end }}
-          {{- end }}
-          #readinessProbe
-          {{- if .readinessProbe }}
-          {{- if .readinessProbe.enabled }}
+
+          {{- if and $healthCheck.readinessProbe $healthCheck.readinessProbe.enabled | default $healthCheck.enabled }}
           readinessProbe:
-            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds | default 30 }}
-            periodSeconds: {{ .readinessProbe.periodSeconds | default 20 }}
-            timeoutSeconds: {{ .readinessProbe.timeoutSeconds | default 10 }}
-            failureThreshold: {{ .readinessProbe.failureThreshold | default 5 }}
+            initialDelaySeconds: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.initialDelaySeconds | default $healthCheck.initialDelaySeconds | default 2 }}
+            periodSeconds: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.periodSeconds | default $healthCheck.periodSeconds | default 10 }}
+            timeoutSeconds: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.timeoutSeconds | default $healthCheck.timeoutSeconds | default 5 }}
+            failureThreshold: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.failureThreshold | default $healthCheck.failureThreshold | default 5 }}
             httpGet:
-              {{- if .readinessProbe.path }}
-              path: {{ .readinessProbe.path }}
-              {{- else }}
-              path: {{ .singlePath | default "/" }}
-              {{- end }}
-              port: {{ .port | default "http" }}
+              path: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.path | default $healthCheck.path | default "/" }}
+              port: {{ .name }}
+          {{- end }}
+
           {{- end }}
           {{- end }}
           {{- end }}
