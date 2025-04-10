@@ -11,7 +11,7 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "global-one.labels" . | nindent 6 }}
+      {{- include "global-one.selectorLabels" . | nindent 6 }}
   {{ with .Values.strategy }}
   strategy:
     type: {{ .type | default "RollingUpdate" }}

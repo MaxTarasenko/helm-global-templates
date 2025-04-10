@@ -62,5 +62,6 @@ Selector labels
 */}}
 {{- define "global-one.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "global-one.fullname" . }}
-app.kubernetes.io/instance: {{ include "global-one.fullname" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
