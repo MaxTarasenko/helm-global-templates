@@ -107,14 +107,18 @@ func main() {
 	// Get Node object
 	fmt.Printf("[AUTO MODE] Starting node status monitoring for node %s...\n", nodeName)
 
-	// Configure check interval (default 1 minute)
-	checkInterval := 1 * time.Minute
-	if interval := os.Getenv("CHECK_INTERVAL"); interval != "" {
-		if duration, err := time.ParseDuration(interval); err == nil {
-			checkInterval = duration
+	// Configure check interval (default 5 minutes)
+	checkInterval := 5 * time.Minute
+	if interval := os.Getenv("CHECK_INTERVAL_MINUTES"); interval != "" {
+		if minutes, err := strconv.Atoi(interval); err == nil && minutes > 0 {
+			checkInterval = time.Duration(minutes) * time.Minute
+			fmt.Printf("[AUTO MODE] Check interval set to %d minutes\n", minutes)
+		} else {
+			fmt.Printf("[AUTO MODE] Invalid CHECK_INTERVAL_MINUTES value '%s', using default 5 minutes\n", interval)
 		}
+	} else {
+		fmt.Printf("[AUTO MODE] CHECK_INTERVAL_MINUTES not set, using default 5 minutes\n")
 	}
-	fmt.Printf("[AUTO MODE] Check interval set to %v\n", checkInterval)
 
 	for {
 		// Get Node object

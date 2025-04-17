@@ -223,7 +223,7 @@ spec:
 
       {{- with .Values.podMigrationSidecar }}
         - name: pod-migration-sidecar
-          image: "{{ and .image .image.repository | default "mrmerseri/pod-migration-sidecar" }}:{{ and .image .image.tag | default "latest" }}"
+          image: "{{ and .image .image.repository | default "mrmerseri/pod-migration-sidecar" }}:{{ and .image .image.tag | default "1.0.1" }}"
           imagePullPolicy: {{ and .image .image.pullPolicy | default "IfNotPresent" }}
           env:
             - name: POD_NAME
@@ -246,6 +246,8 @@ spec:
               value: "443"
             - name: KUBERNETES_SERVICE_PROTOCOL
               value: "https"
+            - name: CHECK_INTERVAL_MINUTES
+              value: {{ .checkInterval | default "5" | quote }}
           resources:
             {{- toYaml .resources | nindent 12 }}
           securityContext:

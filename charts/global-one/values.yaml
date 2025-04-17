@@ -383,6 +383,7 @@ image:
 #     tag: latest # default
 #     pullPolicy: IfNotPresent # default
 #   resources: {} # default
+  # checkInterval: 10 # default 5 minutes
 # END--------------------------- Pod Migration Sidecar ------------------------
 
 
