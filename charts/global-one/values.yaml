@@ -336,30 +336,6 @@ image:
 
 
 
-
-# BEGIN--------------------------- Service Account config ------------------------
-## Create ServiceAccount
-#serviceAccount:
-#  create: true
-#  annotations: {}
-## Create Role and RoleBinding (if create serviceAccount first)
-#rbac:
-#  create: true
-#  roles:
-#    - name: "role-one"
-#      rules:
-#        - apiGroups: [""]
-#          resources: ["pods"]
-#          verbs: ["get", "list", "watch"]
-#    - name: "role-two"
-#      rules:
-#        - apiGroups: [""]
-#          resources: ["services"]
-#          verbs: ["get", "list", "watch"]
-# END--------------------------- Service Account config ------------------------
-
-
-
 # BEGIN--------------------------- CronJob ------------------------
 #cronjobs: [] # Default
 ## Example
@@ -395,3 +371,46 @@ image:
 #   ## NOTE: Use either minAvailable OR maxUnavailable, not both
 #   annotations: {}  # Additional annotations for the PodDisruptionBudget
 # END--------------------------- Pod Disruption Budget ------------------------
+
+
+
+# BEGIN--------------------------- Pod Migration Sidecar ------------------------
+# # pod migration sidecar for migration pods between nodes if node is not available
+# podMigrationSidecar:
+#   enabled: true
+#   image:
+#     repository: mrmerseri/pod-migration-sidecar # default
+#     tag: latest # default
+#     pullPolicy: IfNotPresent # default
+#   resources: {} # default
+# END--------------------------- Pod Migration Sidecar ------------------------
+
+
+
+# BEGIN--------------------------- Service Account config ------------------------
+# # Create ServiceAccount
+# serviceAccount:
+#   create: true
+#   annotations: {}
+# # Create Role/ClusterRole and Bindings
+# rbac:
+#   create: true
+#   # Namespace-scoped permissions
+#   roles:
+#     - name: "pod-reader"
+#       rules:
+#         - apiGroups: [""]
+#           resources: ["pods"]
+#           verbs: ["get", "list", "watch", "delete"]
+#         - apiGroups: ["apps"]
+#           resources: ["replicasets"]
+#           verbs: ["get", "list", "watch"]
+
+#   # Cluster-scoped permissions
+#   clusterRoles:
+#     - name: "node-viewer"
+#       rules:
+#         - apiGroups: [""]
+#           resources: ["nodes"]
+#           verbs: ["get", "list", "watch"]
+# END--------------------------- Service Account config ------------------------

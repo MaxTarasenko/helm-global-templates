@@ -1,0 +1,79 @@
+version: '3'
+
+vars:
+  HELM_CHART_PACKAGE: "{{.HELM_CHART_PACKAGE}}"
+  DCR: registry-1.docker.io
+  HELM_CHART_VERSION:
+    sh: yq '.version' charts/global-one/Chart.yaml
+  POD_MIGRATION_VERSION:
+    sh: cat pod-migration-sidecar/VERSION
+
+tasks:
+  current-version:
+    desc: "Show current Helm chart version"
+    cmds:
+      - 'echo "Current version of Helm chart: {{.HELM_CHART_VERSION}}"'
+      - 'echo "Current version of pod-migration-sidecar: {{.POD_MIGRATION_VERSION}}"'
+
+  current-pod-migration-version:
+    desc: "Show current pod-migration-sidecar version"
+    cmds:
+      - 'echo "Current pod-migration-sidecar version: {{.POD_MIGRATION_VERSION}}"'
+
+  default:
+    desc: "Show all available tasks"
+    cmds:
+      - task --list-all
+
+  login:
+    desc: "Login to Docker registry for Helm"
+    cmds:
+      - helm registry login registry-1.docker.io
+
+  create-namespace:
+    desc: "Create the 'test' namespace in Kubernetes"
+    cmds:
+      - kubectl create namespace test
+
+  diff:
+    desc: "Show diff between current release and local Helm chart changes"
+    cmds:
+      - helm -n test diff upgrade test charts/global-one --allow-unreleased --context 1 --debug -f charts/global-one/values.yaml
+
+  upgrade:
+    desc: "Install or upgrade Helm release in the 'test' namespace"
+    cmds:
+      - helm -n test upgrade --install test --create-namespace charts/global-one
+
+  uninstall:
+    desc: "Uninstall Helm release from the 'test' namespace"
+    cmds:
+      - helm -n test uninstall test
+
+  package:
+    desc: "Package Helm chart with the current version"
+    cmds:
+      - helm package charts/global-one --version={{.HELM_CHART_VERSION}}
+    vars:
+      HELM_CHART_PACKAGE:
+        sh: ls *.tgz | head -n 1
+
+  deploy:
+    desc: "Publish Helm chart to OCI registry and remove local archive"
+    deps: [package]
+    cmds:
+      - helm push {{.HELM_CHART_PACKAGE}} oci://{{.DCR}}/mrmerseri
+      - rm {{.HELM_CHART_PACKAGE}}
+
+  release:
+    desc: "Run release script to update index.yaml"
+    cmds:
+      - ./release-and-update-index.sh
+
+  build-image-pod-migration-sidecar:
+    desc: "Build and push pod-migration-sidecar Docker image for amd64 and arm64"
+    dir: pod-migration-sidecar
+    cmds:
+      - docker buildx build --platform linux/amd64,linux/arm64 -t mrmerseri/pod-migration-sidecar:{{.POD_MIGRATION_VERSION}} -f Dockerfile .
+      - docker tag mrmerseri/pod-migration-sidecar:{{.POD_MIGRATION_VERSION}} mrmerseri/pod-migration-sidecar:latest
+      - docker push -a mrmerseri/pod-migration-sidecar
