@@ -1,4 +1,5 @@
 {{- $fullname := include "global-one.fullname" . -}}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -65,6 +66,27 @@ spec:
         {{- end }}
         {{- end }}
 
+        {{- if and .Values.podMigrationSidecar .Values.podMigrationSidecar.enabled }}
+        - name: kube-api-access
+          projected:
+            sources:
+              - serviceAccountToken:
+                  expirationSeconds: 3607
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+            defaultMode: 420
+        {{- end }}
+
       {{- with .Values.image.pullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -72,6 +94,8 @@ spec:
 
       {{- if and .Values.serviceAccount .Values.serviceAccount.create }}
       serviceAccountName: {{ include "global-one.fullname" . }}
+      {{- else if and .Values.podMigrationSidecar .Values.podMigrationSidecar.enabled }}
+      serviceAccountName: {{ printf "%s-pod-migration-sidecar" $fullname }}
       {{- end }}
 
       {{- with .Values.podSecurityContext }}
@@ -196,6 +220,52 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+
+      {{- with .Values.podMigrationSidecar }}
+        - name: pod-migration-sidecar
+          image: "{{ and .image .image.repository | default "mrmerseri/pod-migration-sidecar" }}:{{ and .image .image.tag | default "latest" }}"
+          imagePullPolicy: {{ and .image .image.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: KUBERNETES_SERVICE_HOST
+              value: kubernetes.default.svc
+            - name: KUBERNETES_SERVICE_PORT
+              value: "443"
+            - name: KUBERNETES_SERVICE_PORT_HTTPS
+              value: "443"
+            - name: KUBERNETES_SERVICE_PROTOCOL
+              value: "https"
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            seLinuxOptions: {}
+            runAsUser: 1001
+            runAsGroup: 1001
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
+      {{- end }}
 
       {{- with .Values.nodeSelector }}
       nodeSelector:

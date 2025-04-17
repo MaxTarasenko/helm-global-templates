@@ -1,0 +1,54 @@
+{{- if and .Values.podMigrationSidecar .Values.podMigrationSidecar.enabled }}
+{{- $fullname := include "global-one.fullname" . -}}
+{{- $labels := include "global-one.labels" . -}}
+{{- $saName := "" -}}
+{{- if and .Values.serviceAccount .Values.serviceAccount.create }}
+  {{- /* Use existing service account */ -}}
+  {{- $saName = $fullname -}}
+{{- else }}
+  {{- /* Create a dedicated service account for pod-migration-sidecar */ -}}
+  {{- $saName = printf "%s-pod-migration-sidecar" $fullname -}}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $saName }}
+  namespace: {{ $.Release.Namespace | default "default" }}
+  labels:
+    {{- $labels | nindent 4 }}
+{{- end }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $fullname }}-pod-migration
+  labels:
+    {{- $labels | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $fullname }}-pod-migration-binding
+  labels:
+    {{- $labels | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $saName }}
+    namespace: {{ $.Release.Namespace | default "default" }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $fullname }}-pod-migration
+{{- end }}
