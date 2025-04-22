@@ -1,13 +1,13 @@
 {{- $fullname := include "global-one.fullname" . -}}
 {{- $labels := include "global-one.labels" . -}}
 
-{{- range .Values.service }}
-{{- if and .networkPolicy .networkPolicy.enabled }}
+{{- range $name, $svc := .Values.service }}
+{{- if and $svc.networkPolicy $svc.networkPolicy.enabled }}
 
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ $fullname }}-{{ .name }}
+  name: {{ $fullname }}-{{ $name }}
   labels:
     {{- $labels | nindent 4 }}
 spec:
@@ -15,8 +15,8 @@ spec:
     matchLabels:
       {{- $labels | nindent 6 }}
   policyTypes:
-    {{- if .networkPolicy.policyTypes }}
-    {{- range .networkPolicy.policyTypes }}
+    {{- if $svc.networkPolicy.policyTypes }}
+    {{- range $svc.networkPolicy.policyTypes }}
     - {{ . }}
     {{- end }}
     {{- else }}
@@ -24,45 +24,50 @@ spec:
     {{- end }}
 
   ingress:
+    {{- if $svc.networkPolicy.ingressAllowAllPods }}
     - from:
-        {{- if .networkPolicy.allowFromAllNamespaces }}
+        - podSelector: {}
+      ports:
+        - port: {{ $svc.port }}
+          protocol: {{ $svc.protocol | default "TCP" }}
+    {{- else }}
+    - from:
+        {{- if $svc.networkPolicy.allowFromAllNamespaces }}
         - namespaceSelector: {}
-          podSelector: {}
         {{- else }}
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: {{ $.Release.Namespace }}
         {{- end }}
-          podSelector: {}
       ports:
-        - port: {{ .port }}
-          protocol: {{ .protocol | default "TCP" }}
+        - port: {{ $svc.port }}
+          protocol: {{ $svc.protocol | default "TCP" }}
+    {{- end }}
 
-    {{- if .networkPolicy.ipList }}
-    {{- range $ip := .networkPolicy.ipList }}
+    {{- if $svc.networkPolicy.ipList }}
+    {{- range $ip := $svc.networkPolicy.ipList }}
     - from:
         - ipBlock:
             cidr: {{ if not (regexMatch "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+/[0-9]+$" $ip) }}{{ $ip }}/32{{ else }}{{ $ip }}{{ end }}
       ports:
-        - port: {{ .port }}
-          protocol: {{ .protocol | default "TCP" }}
+        - port: {{ $svc.port }}
+          protocol: {{ $svc.protocol | default "TCP" }}
     {{- end }}
     {{- end }}
 
-  {{- if or .networkPolicy.egressAllowAllPods .networkPolicy.useDefaultPolicy }}
+  {{- if or $svc.networkPolicy.egressAllowAllPods $svc.networkPolicy.useDefaultPolicy }}
   egress:
     - to:
-        {{- if .networkPolicy.egressAllowAllPods }}
+        {{- if $svc.networkPolicy.egressAllowAllPods }}
         - podSelector: {}
-          namespaceSelector: {}
         {{- else }}
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: {{ $.Release.Namespace }}
         {{- end }}
       ports:
-        - port: {{ .port }}
-          protocol: {{ .protocol | default "TCP" }}
+        - port: {{ $svc.port }}
+          protocol: {{ $svc.protocol | default "TCP" }}
   {{- end }}
 
 {{- end }}

@@ -2,30 +2,30 @@
 {{- $labels := include "global-one.labels" . -}}
 {{- $sharedHeadlessPorts := list }}
 
-{{- range .Values.service }}
-{{- if .headless }}
-{{- if .separate }}
+{{- range $name, $config := .Values.service }}
+  {{- if $config.headless }}
+    {{- if $config.separate }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullname }}-{{ .name }}-headless
+  name: {{ $fullname }}-{{ $name }}-headless
   labels:
     {{- $labels | nindent 4 }}
 spec:
   clusterIP: None
   ports:
-    - port: {{ .port }}
-      targetPort: {{ .name }}
-      protocol: {{ default "TCP" .protocol }}
-      name: {{ .name }}
+    - port: {{ $config.port }}
+      targetPort: {{ $config.port }}
+      protocol: {{ default "TCP" $config.protocol }}
+      name: {{ $name }}
   selector:
     {{- $labels | nindent 4 }}
 ---
-{{- else }}
-{{- $sharedHeadlessPort := dict "port" .port "targetPort" .name "protocol" (default "TCP" .protocol) "name" .name }}
-{{- $sharedHeadlessPorts = append $sharedHeadlessPorts $sharedHeadlessPort }}
-{{- end }}
-{{- end }}
+    {{- else }}
+      {{- $sharedHeadlessPort := dict "port" $config.port "targetPort" $config.port "protocol" (default "TCP" $config.protocol) "name" $name }}
+      {{- $sharedHeadlessPorts = append $sharedHeadlessPorts $sharedHeadlessPort }}
+    {{- end }}
+  {{- end }}
 {{- end }}
 
 {{- if gt (len $sharedHeadlessPorts) 0 }}

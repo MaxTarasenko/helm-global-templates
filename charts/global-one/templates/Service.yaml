@@ -1,31 +1,37 @@
 {{- $fullname := include "global-one.fullname" . -}}
 {{- $labels := include "global-one.labels" . -}}
+
 {{- $sharedPorts := list }}
 
-{{- range .Values.service }}
-{{- $type := default "ClusterIP" .type }}
-{{- if or .separate (not (eq $type "ClusterIP")) }}
+{{- if .Values.service }}
+{{- range $name, $config := .Values.service }}
+  {{- if $config.separate }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullname }}-{{ .name }}
+  name: {{ $fullname }}-{{ $name }}
   labels:
     {{- $labels | nindent 4 }}
 spec:
-  type: {{ $type }}
+  type: {{ default "ClusterIP" $config.type }}
+  {{- if $config.headless }}
+  clusterIP: None
+  {{- end }}
   ports:
-    - port: {{ .port }}
-      targetPort: {{ .name }}
-      protocol: {{ default "TCP" .protocol }}
-      name: {{ .name }}
-      {{- if and (or (eq $type "LoadBalancer") (eq $type "NodePort")) .nodePort }}
-      nodePort: {{ .nodePort }}
+    - port: {{ $config.port }}
+      targetPort: {{ $config.port }}
+      protocol: {{ default "TCP" $config.protocol }}
+      name: {{ $name }}
+      {{- if and (or (eq $config.type "LoadBalancer") (eq $config.type "NodePort")) $config.nodePort }}
+      nodePort: {{ $config.nodePort }}
       {{- end }}
   selector:
     {{- $labels | nindent 4 }}
 ---
-{{- else }}
-{{- $sharedPorts = append $sharedPorts (dict "port" .port "targetPort" .name "protocol" (default "TCP" .protocol) "name" .name) }}
+  {{- else }}
+    {{- $sharedPort := dict "port" $config.port "targetPort" $config.port "protocol" (default "TCP" $config.protocol) "name" $name "headless" $config.headless }}
+    {{- $sharedPorts = append $sharedPorts $sharedPort }}
+  {{- end }}
 {{- end }}
 {{- end }}
 
@@ -38,6 +44,9 @@ metadata:
     {{- $labels | nindent 4 }}
 spec:
   type: ClusterIP
+  {{- if (index $sharedPorts 0).headless }}
+  clusterIP: None
+  {{- end }}
   ports:
     {{- range $sharedPorts }}
     - port: {{ .port }}

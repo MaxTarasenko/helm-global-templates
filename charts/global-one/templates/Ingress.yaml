@@ -1,30 +1,31 @@
 {{- $fullName := include "global-one.fullname" . -}}
 {{- $labels := include "global-one.labels" . -}}
-{{- range .Values.service }}
-{{- if and .ingress .ingress.enabled -}}
-{{- $path := .ingress.path | default "/" -}}
-{{- $pathType := .ingress.pathType | default "ImplementationSpecific" -}}
-{{- $port := .port -}}
-{{- $hosts := .ingress.hosts | default (list) -}}
-{{- $singleHost := .ingress.host | default "global-one.local" -}}
-{{- $existingSecret := .ingress.existingSecret | default "" -}}
-{{- $existingSecrets := .ingress.existingSecrets | default dict -}}
+{{- range $name, $svc := .Values.service }}
+  {{- if and $svc.ingress $svc.ingress.enabled }}
+    {{- $path := $svc.ingress.path | default "/" -}}
+    {{- $pathType := $svc.ingress.pathType | default "Prefix" -}}
+    {{- $port := $svc.port -}}
+    {{- $hosts := $svc.ingress.hosts | default (list) -}}
+    {{- $singleHost := $svc.ingress.host | default "global-one.local" -}}
+    {{- $existingSecret := $svc.ingress.existingSecret | default "" -}}
+    {{- $existingSecrets := $svc.ingress.existingSecrets | default dict -}}
+    {{- $svcName := (ternary (printf "%s-%s" $fullName $name) $fullName (or $svc.separate false)) }}
 
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ $fullName }}-{{ .name }}
+  name: {{ $fullName }}-{{ $name }}
   labels:
     {{- $labels | nindent 4 }}
-  {{- with .ingress.annotations }}
+  {{- with $svc.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .ingress.tls }}
+  {{- if $svc.ingress.tls }}
   tls:
     {{- if gt (len $hosts) 0 }}
-    {{- range $hosts }}
+      {{- range $hosts }}
     - hosts:
         - {{ . }}
       {{- if and (hasKey $existingSecrets .) (typeIs "map[string]interface {}" $existingSecrets) }}
@@ -34,7 +35,7 @@ spec:
       {{- else }}
       secretName: {{ printf "%s-tls" . }}
       {{- end }}
-    {{- end }}
+      {{- end }}
     {{- else }}
     - hosts:
         - {{ $singleHost }}
@@ -47,7 +48,7 @@ spec:
   {{- end }}
   rules:
     {{- if gt (len $hosts) 0 }}
-    {{- range $hosts }}
+      {{- range $hosts }}
     - host: {{ . | quote }}
       http:
         paths:
@@ -55,10 +56,10 @@ spec:
             pathType: {{ $pathType }}
             backend:
               service:
-                name: {{ $fullName }}
+                name: {{ $svcName }}
                 port:
                   number: {{ $port }}
-    {{- end }}
+      {{- end }}
     {{- else }}
     - host: {{ $singleHost | quote }}
       http:
@@ -67,10 +68,10 @@ spec:
             pathType: {{ $pathType }}
             backend:
               service:
-                name: {{ $fullName }}
+                name: {{ $svcName }}
                 port:
                   number: {{ $port }}
     {{- end }}
 
-{{- end }}
+  {{- end }}
 {{- end }}
