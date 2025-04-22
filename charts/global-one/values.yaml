@@ -76,7 +76,9 @@ image:
 
 # BEGIN--------------------------- Service and Ingress ------------------------
 #service:
-#  - name: http
+#  metrics:
+#    port: 9090
+#  http:
 #    port: 80
 #    type: NodePort # Default ClusterIP or (LoadBalancer/NodePort)
 #    nodePort: 3000 # Default disable and random create
@@ -110,13 +112,15 @@ image:
 ##   For enable ingress and create
 #    ingress:
 #      enabled: true # Default false
+#      annotations: # Default {}
+#        kubernetes.io/ingress.class: alb
 #      className: "" # Default
 #      host: example.com # Default | only single
-#      hosts: [] # Default for multi or single host | overwrite host
+#      hosts: # Default [] for multi or single host | overwrite host
 #        - example1.com # Example
 #        - example2.com # Example
 #      path: / # Default
-#      pathType: ImplementationSpecific # Default
+#      pathType: Prefix # Default
 #      annotations: {} # Default
 #      tls: false # Default
 #      existingSecret: "custom-tls"

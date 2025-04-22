@@ -170,24 +170,22 @@ spec:
             {{- end }}
             {{- end }}
 
-          {{- with .Values.service }}
+          {{- range $name, $config := .Values.service }}
           ports:
-            {{- range . }}
-            - name: {{ .name }}
-              containerPort: {{ .port }}
-              {{ if .protocol }}
-              protocol: {{ .protocol }}
+            - name: {{ $name }}
+              containerPort: {{ $config.port }}
+              {{ if $config.protocol }}
+              protocol: {{ $config.protocol }}
               {{ else }}
               protocol: TCP
               {{ end }}
-            {{- end }}
           {{- end }}
 
           {{- $healthCheckDefined := false }}
-          {{- range .Values.service }}
-          {{- if and .healthCheck (not $healthCheckDefined) }}
+          {{- range $name, $config := .Values.service }}
+          {{- if and $config.healthCheck (not $healthCheckDefined) }}
           {{- $healthCheckDefined = true }}
-          {{- $healthCheck := .healthCheck }}
+          {{- $healthCheck := $config.healthCheck }}
           {{- if $healthCheck.enabled }}
 
           {{- if and $healthCheck.livenessProbe $healthCheck.livenessProbe.enabled | default $healthCheck.enabled }}
@@ -198,7 +196,7 @@ spec:
             failureThreshold: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.failureThreshold | default $healthCheck.failureThreshold | default 5 }}
             httpGet:
               path: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.path | default $healthCheck.path | default "/" }}
-              port: {{ .name }}
+              port: {{ $name }}
           {{- end }}
 
           {{- if and $healthCheck.readinessProbe $healthCheck.readinessProbe.enabled | default $healthCheck.enabled }}
@@ -209,7 +207,7 @@ spec:
             failureThreshold: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.failureThreshold | default $healthCheck.failureThreshold | default 5 }}
             httpGet:
               path: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.path | default $healthCheck.path | default "/" }}
-              port: {{ .name }}
+              port: {{ $name }}
           {{- end }}
 
           {{- end }}
