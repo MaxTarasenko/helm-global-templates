@@ -1,6 +1,6 @@
 {{- $fullname := include "global-one.fullname" . -}}
 {{- $labels := include "global-one.labels" . -}}
-
+{{- $selectorLabels := include "global-one.selectorLabels" . -}}
 {{- $sharedPorts := list }}
 
 {{- if .Values.service }}
@@ -26,7 +26,7 @@ spec:
       nodePort: {{ $config.nodePort }}
       {{- end }}
   selector:
-    {{- $labels | nindent 4 }}
+    {{- $selectorLabels | nindent 4 }}
 ---
   {{- else }}
     {{- $sharedPort := dict "port" $config.port "targetPort" $config.port "protocol" (default "TCP" $config.protocol) "name" $name "headless" $config.headless }}
@@ -55,5 +55,5 @@ spec:
       name: {{ .name }}
     {{- end }}
   selector:
-    {{- $labels | nindent 4 }}
+    {{- $selectorLabels | nindent 4 }}
 {{- end }}

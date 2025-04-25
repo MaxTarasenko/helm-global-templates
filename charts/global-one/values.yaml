@@ -419,3 +419,21 @@ image:
 #           resources: ["nodes"]
 #           verbs: ["get", "list", "watch"]
 # END--------------------------- Service Account config ------------------------
+
+
+
+# BEGIN--------------------------- Pod Anti Affinity config ------------------------
+## For distribute pods across different nodes or zones or regions
+#podAntiAffinity:
+#  enabled: true
+#  type: "soft" # default / or "hard"
+#  topologyKey: "kubernetes.io/hostname" # default / Available options:
+#    # "kubernetes.io/hostname" - distribute pods across different nodes
+#    # "topology.kubernetes.io/zone" - distribute pods across different availability zones
+#    # "topology.kubernetes.io/region" - distribute pods across different regions
+#  labelSelector:
+#    matchLabels:
+#      app.kubernetes.io/name: "{{ .Release.Name }}"
+#      app.kubernetes.io/instance: "{{ .Release.Name }}"
+#  weight: 100 # default / only used when type is "soft"
+# END--------------------------- Pod Anti Affinity config ------------------------

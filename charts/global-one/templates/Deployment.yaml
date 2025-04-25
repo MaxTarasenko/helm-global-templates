@@ -7,7 +7,7 @@ metadata:
   labels:
     {{- include "global-one.labels" . | nindent 4 }}
 spec:
-  {{- if and .Values.autoscaling (not .Values.autoscaling.enabled) }}
+  {{- if or (not .Values.autoscaling) (not .Values.autoscaling.enabled) }}
   replicas: {{ .Values.replicaCount | default 1 }}
   {{- end }}
   selector:
@@ -101,6 +101,34 @@ spec:
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- if and .Values.podAntiAffinity .Values.podAntiAffinity.enabled }}
+      affinity:
+        podAntiAffinity:
+          {{- if eq .Values.podAntiAffinity.type "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  {{- if .Values.podAntiAffinity.labelSelector }}
+                  {{- toYaml .Values.podAntiAffinity.labelSelector | nindent 18 }}
+                  {{- else }}
+                  {{- include "global-one.selectorLabels" . | nindent 18 }}
+                  {{- end }}
+              topologyKey: {{ .Values.podAntiAffinity.topologyKey | default "kubernetes.io/hostname" }}
+          {{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: {{ .Values.podAntiAffinity.weight | default 100 }}
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- if .Values.podAntiAffinity.labelSelector }}
+                    {{- toYaml .Values.podAntiAffinity.labelSelector | nindent 20 }}
+                    {{- else }}
+                    {{- include "global-one.selectorLabels" . | nindent 20 }}
+                    {{- end }}
+                topologyKey: {{ .Values.podAntiAffinity.topologyKey | default "kubernetes.io/hostname" }}
+          {{- end }}
       {{- end }}
 
       {{- if .Values.initContainers }}
