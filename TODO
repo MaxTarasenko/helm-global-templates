@@ -1,7 +1,0 @@
-1. podAntiAffinity (добавить функцию, чтоб деплоймент не создавался на одной машине)
-2. securityContext/seccompProfile (добавить функцию, чтобы нельзя было зайти под root, shell, sudo)
-3. ValidatingWebhookConfiguration
-4. 
-5. 
-6. 
-7. 
