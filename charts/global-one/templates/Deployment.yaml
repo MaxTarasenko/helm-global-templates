@@ -216,26 +216,22 @@ spec:
           {{- $healthCheck := $config.healthCheck }}
           {{- if $healthCheck.enabled }}
 
-          {{- if and $healthCheck.livenessProbe $healthCheck.livenessProbe.enabled | default $healthCheck.enabled }}
-          livenessProbe:
-            initialDelaySeconds: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.initialDelaySeconds | default $healthCheck.initialDelaySeconds | default 2 }}
-            periodSeconds: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.periodSeconds | default $healthCheck.periodSeconds | default 10 }}
-            timeoutSeconds: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.timeoutSeconds | default $healthCheck.timeoutSeconds | default 5 }}
-            failureThreshold: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.failureThreshold | default $healthCheck.failureThreshold | default 5 }}
-            httpGet:
-              path: {{ and $healthCheck.livenessProbe $healthCheck.livenessProbe.path | default $healthCheck.path | default "/" }}
-              port: {{ $name }}
+          {{- if and $healthCheck.startupProbe $healthCheck.startupProbe.enabled }}
+          {{- include "global-one.probe" (dict "probe" $healthCheck.startupProbe "healthCheck" $healthCheck "name" $name "type" "startup" "port" $config.port) | nindent 10 }}
           {{- end }}
 
-          {{- if and $healthCheck.readinessProbe $healthCheck.readinessProbe.enabled | default $healthCheck.enabled }}
-          readinessProbe:
-            initialDelaySeconds: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.initialDelaySeconds | default $healthCheck.initialDelaySeconds | default 2 }}
-            periodSeconds: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.periodSeconds | default $healthCheck.periodSeconds | default 10 }}
-            timeoutSeconds: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.timeoutSeconds | default $healthCheck.timeoutSeconds | default 5 }}
-            failureThreshold: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.failureThreshold | default $healthCheck.failureThreshold | default 5 }}
-            httpGet:
-              path: {{ and $healthCheck.readinessProbe $healthCheck.readinessProbe.path | default $healthCheck.path | default "/" }}
-              port: {{ $name }}
+          {{- if and $healthCheck.readinessProbe $healthCheck.readinessProbe.enabled }}
+          {{- include "global-one.probe" (dict "probe" $healthCheck.readinessProbe "healthCheck" $healthCheck "name" $name "type" "readiness" "port" $config.port) | nindent 10 }}
+          {{- else }}
+          {{- include "global-one.probe" (dict "probe" $healthCheck.readinessProbe "healthCheck" $healthCheck "name" $name "type" "readiness" "port" $config.port) | nindent 10 }}
+          {{- end }}
+
+          {{- if and $healthCheck.livenessProbe (hasKey $healthCheck.livenessProbe "enabled") }}
+          {{- if $healthCheck.livenessProbe.enabled }}
+          {{- include "global-one.probe" (dict "probe" $healthCheck.livenessProbe "healthCheck" $healthCheck "name" $name "type" "liveness" "port" $config.port) | nindent 10 }}
+          {{- end }}
+          {{- else }}
+          {{- include "global-one.probe" (dict "probe" $healthCheck.livenessProbe "healthCheck" $healthCheck "name" $name "type" "liveness" "port" $config.port) | nindent 10 }}
           {{- end }}
 
           {{- end }}

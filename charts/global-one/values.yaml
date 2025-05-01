@@ -90,25 +90,33 @@ image:
 ##   For enable health check
 #    healthCheck: # Default disabled
 #      enabled: true
+#      useTCPSocket: true
 #      path: / # Default [/]
-#      initialDelaySeconds: 2 # Default [2]
-#      periodSeconds: 10 # Default [10]
-#      timeoutSeconds: 5 # Default [5]
-#      failureThreshold: 5 # Default [5]
-#      livenessProbe:
-#        enabled: true
+#      initialDelaySeconds: 2 # for all probes
+#      periodSeconds: 10 # for all probes
+#      timeoutSeconds: 2 # for all probes
+#      failureThreshold: 5 # for all probes
+#      startupProbe:
+#        enabled: true # Optional (override common)
 #        path: / # Optional (priority)
 #        initialDelaySeconds: 50 # Optional (override common)
 #        periodSeconds: 30 # Optional (override common)
-#        timeoutSeconds: 20 # Optional (override common)
-#        failureThreshold: 10 # Optional (override common)
+#        failureThreshold: 30          # allow up to 30 failures
+#        periodSeconds: 10             # check every 10 seconds → gives up to 5 min
 #      readinessProbe:
-#        enabled: true
+#        enabled: true # Optional (override common)
 #        path: / # Optional (priority)
-#        initialDelaySeconds: 50 # Optional (override common)
-#        periodSeconds: 30 # Optional (override common)
-#        timeoutSeconds: 20 # Optional (override common)
-#        failureThreshold: 10 # Optional (override common)
+#        initialDelaySeconds: 1        # start probing almost immediately
+#        periodSeconds: 5              # check every 5 seconds
+#        timeoutSeconds: 2             # wait up to 2 seconds for response
+#        failureThreshold: 3           # remove from traffic after 3 failures
+#      livenessProbe:
+#        enabled: true # Optional (override common)
+#        path: / # Optional (priority)
+#        initialDelaySeconds: 5        # wait 5 seconds after container start
+#        periodSeconds: 10             # check every 10 seconds
+#        timeoutSeconds: 2             # wait up to 2 seconds for response
+#        failureThreshold: 3           # restart container after 3 failures
 ##   For enable ingress and create
 #    ingress:
 #      enabled: true # Default false

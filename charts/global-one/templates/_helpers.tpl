@@ -65,3 +65,26 @@ app.kubernetes.io/name: {{ include "global-one.fullname" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
+
+{{/*
+Probe configuration
+*/}}
+{{- define "global-one.probe" -}}
+{{- $probe := .probe -}}
+{{- $healthCheck := .healthCheck -}}
+{{- $name := .name -}}
+{{- $port := .port -}}
+{{ .type }}Probe:
+  initialDelaySeconds: {{ and $probe $probe.initialDelaySeconds | default $healthCheck.initialDelaySeconds | default 2 }}
+  periodSeconds: {{ and $probe $probe.periodSeconds | default $healthCheck.periodSeconds | default 10 }}
+  timeoutSeconds: {{ and $probe $probe.timeoutSeconds | default $healthCheck.timeoutSeconds | default 2 }}
+  failureThreshold: {{ and $probe $probe.failureThreshold | default $healthCheck.failureThreshold | default 5 }}
+{{- if $healthCheck.useTCPSocket }}
+  tcpSocket:
+    port: {{ $port }}
+{{- else }}
+  httpGet:
+    path: {{ and $probe $probe.path | default $healthCheck.path | default "/" }}
+    port: {{ $name }}
+{{- end }}
+{{- end -}}
