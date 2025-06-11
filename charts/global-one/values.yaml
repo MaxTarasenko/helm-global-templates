@@ -6,6 +6,7 @@ Default_Values-And-Instructions: "https://github.com/MaxTarasenko/helm-global-te
 
 # BEGIN--------------------------- Standard config ------------------------
 clusterDomain: cluster.local
+type: Deployment # Deployment or StatefulSet
 
 image:
 ## --- with 'env' used [repository/env/name:tag] ---
